@@ -6,7 +6,7 @@ def request():      #chiedo all'utente di quali codici ha bisgono
         y=input("Di quale edizione hai bisogno?(2024 o 2025:)")
         try:
             z=float(input("Inserisci Importo di cui hai bisogno: "))
-        except:
+        except ValueError:  #aggunto errore in caso di inserimento errato
             print("L'importo inserito non è valido, riprova ")
             continue
 #gestisco eventuali inserimenti minuscoli o tab non richiesti
@@ -64,6 +64,7 @@ def calcola_codici_necessari2(tipo, edizione, importoinput):        #cacolo qual
     codici = []
     somma = 0
     residuo=importoinput
+    rimanenti=[]
 
     for el in righe:
         if float(el[2]) <= residuo:
@@ -73,15 +74,27 @@ def calcola_codici_necessari2(tipo, edizione, importoinput):        #cacolo qual
 
             if somma >=importoinput:
                 break
+            else:
+                rimanenti.append(el)
+
+        #se l'importo non è ancora coperto, aggiungi il codice più piccolo
+        #che copre il residuo (anche se o supera)
+        
+        if somma < importoinput and rimanenti:
+            residuo=importoinput-somma
+            candidati= [c for c in rimanenti if float(c[2]) >= residuo]
+            if candidati:
+                codici.append(candidati[-1]) #il più piccolo tra quelli sufficienti 
+
     return codici
 codici_scleti=calcola_codici_necessari2(x,y,z)
 print(calcola_codici_necessari2(x,y,z))
 
-def usati(calcola_codici_necessari2):
+def usati(codici_selezionati):
     ID=[(el[0],)  #considerato che con la funzione Check() ogni el è una tupla che rappresenta CodiceID, Tipo IMporto,Edizione
-    for el in calcola_codici_necessari2]   #con (el[0],) creo una tupla con un solo elemento
+    for el in codici_selezionati]   #con (el[0],) creo una tupla con un solo elemento
 
-    query_update= "UPDATE Codici SET StatoCodice = 'Usato' WHERE 'CodiceID' = %s"
+    query_update= "UPDATE Codici SET StatoCodice = 'Usato' WHERE CodiceID = %s"
     try:
         cursor.executemany(query_update, ID)
         conn.commit() #aggiorno il db
