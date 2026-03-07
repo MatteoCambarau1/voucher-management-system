@@ -1,2 +1,0 @@
-USE CDD_YM;
-

@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Distribuzione Codici Voucher</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <title>Sistema Distribuzione Codici</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0f1117;
-            --surface: #1a1d27;
-            --surface-hover: #222632;
-            --border: #2a2e3b;
-            --text: #e8e9ed;
-            --text-muted: #8b8fa3;
-            --accent: #6c63ff;
-            --accent-glow: rgba(108, 99, 255, 0.25);
-            --accent-soft: rgba(108, 99, 255, 0.1);
-            --success: #34d399;
-            --success-bg: rgba(52, 211, 153, 0.08);
-            --error: #f87171;
-            --error-bg: rgba(248, 113, 113, 0.08);
+            --bg: #fffaf6;
+            --surface: #ffffff;
+            --surface-hover: #fff4ec;
+            --border: #f0dece;
+            --text: #1a1008;
+            --text-muted: #9c8272;
+            --accent: #f97316;
+            --accent-2: #c2440a;
+            --accent-glow: rgba(249, 115, 22, 0.18);
+            --accent-soft: rgba(249, 115, 22, 0.08);
+            --success: #16a34a;
+            --success-bg: rgba(22, 163, 74, 0.07);
+            --error: #dc2626;
+            --error-bg: rgba(220, 38, 38, 0.07);
             --radius: 12px;
         }
 
@@ -31,9 +32,10 @@
             color: var(--text);
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 24px;
+            padding: 32px 24px;
             position: relative;
             overflow-x: hidden;
         }
@@ -42,16 +44,55 @@
             content: '';
             position: fixed;
             top: -40%; left: -20%; width: 80%; height: 80%;
-            background: radial-gradient(ellipse, rgba(108, 99, 255, 0.06) 0%, transparent 70%);
+            background: radial-gradient(ellipse, rgba(249, 115, 22, 0.07) 0%, transparent 70%);
             pointer-events: none;
         }
         body::after {
             content: '';
             position: fixed;
             bottom: -30%; right: -10%; width: 60%; height: 60%;
-            background: radial-gradient(ellipse, rgba(52, 211, 153, 0.04) 0%, transparent 70%);
+            background: radial-gradient(ellipse, rgba(26, 16, 8, 0.04) 0%, transparent 70%);
             pointer-events: none;
         }
+
+        .guide-btn {
+            position: fixed;
+            top: 20px; left: 20px;
+            display: flex; align-items: center; gap: 6px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 6px 14px 6px 10px;
+            z-index: 100;
+            box-shadow: 0 2px 12px rgba(26,16,8,0.06);
+            text-decoration: none;
+            color: var(--text-muted);
+            font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+        .guide-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+        .guide-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+        .lang-switch {
+            position: fixed;
+            top: 20px; right: 20px;
+            display: flex; gap: 4px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 4px;
+            z-index: 100;
+            box-shadow: 0 2px 12px rgba(26,16,8,0.06);
+        }
+        .lang-btn {
+            padding: 5px 14px; border-radius: 20px; border: none;
+            background: transparent; color: var(--text-muted);
+            font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+            cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
+        }
+        .lang-btn.active { background: var(--text); color: #fff; }
+        .lang-btn:not(.active):hover { color: var(--text); }
 
         .container { width: 100%; max-width: 480px; position: relative; z-index: 1; }
 
@@ -60,15 +101,45 @@
             display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
             text-transform: uppercase; color: var(--accent); background: var(--accent-soft);
             padding: 6px 14px; border-radius: 20px; margin-bottom: 16px;
+            border: 1px solid rgba(249, 115, 22, 0.2);
         }
-        .header h1 { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; line-height: 1.2; margin-bottom: 8px; }
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px; font-weight: 700; line-height: 1.35; margin-bottom: 8px;
+            background: linear-gradient(135deg, #1a1008 30%, #c2440a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
         .header p { color: var(--text-muted); font-size: 14px; }
 
+        /* Tab mode switcher */
+        .mode-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 28px;
+        }
+        .mode-tab {
+            flex: 1; padding: 10px 0; border: none; background: transparent;
+            font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+            color: var(--text-muted); cursor: pointer; transition: all 0.2s;
+            border-bottom: 2px solid transparent; margin-bottom: -1px;
+        }
+        .mode-tab:hover { color: var(--text); }
+        .mode-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
         .card {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 32px; animation: fadeUp 0.5s ease-out;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            animation: fadeUp 0.5s ease-out;
+            box-shadow: 0 2px 40px rgba(249, 115, 22, 0.06), 0 1px 4px rgba(26,16,8,0.05);
         }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+        .panel { display: none; }
+        .panel.active { display: block; }
 
         .field { margin-bottom: 24px; }
         .field label {
@@ -82,11 +153,16 @@
             background: transparent; color: var(--text-muted); font-family: 'DM Sans', sans-serif;
             font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; text-align: center;
         }
-        .toggle-btn:hover { background: var(--surface-hover); border-color: #3a3f50; }
-        .toggle-btn.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+        .toggle-btn:hover { background: var(--surface-hover); border-color: #e8c9b0; }
+        .toggle-btn.active {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent), 0 4px 20px var(--accent-glow);
+        }
         .toggle-btn .label-main { display: block; font-weight: 700; font-size: 15px; color: inherit; }
         .toggle-btn .label-sub { display: block; font-size: 11px; margin-top: 2px; opacity: 0.7; }
-        .toggle-btn.active .label-main { color: #a5a0ff; }
+        .toggle-btn.active .label-main { color: var(--accent); }
 
         .input {
             width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius);
@@ -94,149 +170,450 @@
             transition: border-color 0.2s, box-shadow 0.2s; outline: none;
         }
         .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-        .input::placeholder { color: #4a4e5c; }
+        .input::placeholder { color: #d9c4b4; }
         .input-wrap { position: relative; }
         .input-wrap .input { padding-right: 44px; }
         .input-wrap .unit { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-weight: 700; font-size: 15px; pointer-events: none; }
 
-        .submit-btn {
-            width: 100%; padding: 16px; border: none; border-radius: var(--radius); background: var(--accent);
-            color: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer;
-            transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s; margin-top: 8px;
+        textarea.input {
+            resize: vertical;
+            min-height: 120px;
+            line-height: 1.7;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13px;
         }
-        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px var(--accent-glow); }
+
+        select.input {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239c8272' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 44px;
+            cursor: pointer;
+        }
+        select.input option { background: #fff; color: var(--text); }
+
+        .hidden { display: none; }
+
+        .input-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+        .submit-btn {
+            width: 100%; padding: 16px; border: none; border-radius: var(--radius);
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+            color: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700;
+            cursor: pointer; transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s; margin-top: 8px;
+            box-shadow: 0 4px 20px rgba(249, 115, 22, 0.35);
+        }
+        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(249, 115, 22, 0.5); }
         .submit-btn:active { transform: translateY(0); }
         .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 8px; }
+        .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 8px; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .results { margin-top: 24px; animation: fadeUp 0.4s ease-out; }
         .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .results-header h2 { font-family: 'Playfair Display', serif; font-size: 18px; }
-        .results-header .totale { font-size: 13px; color: var(--success); font-weight: 700; background: var(--success-bg); padding: 4px 12px; border-radius: 20px; }
+        .results-header .totale {
+            font-size: 13px; color: var(--success); font-weight: 700;
+            background: var(--success-bg); padding: 4px 12px; border-radius: 20px;
+            border: 1px solid rgba(22, 163, 74, 0.15);
+        }
 
         .code-box-wrap { position: relative; }
         .code-box {
-            width: 100%;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
+            width: 100%; background: #fdf6f0;
+            border: 1px solid var(--border); border-radius: 10px;
             padding: 16px 20px;
-            font-family: 'DM Mono', 'DM Sans', monospace;
-            font-size: 14px;
-            line-height: 2;
-            color: var(--text);
-            white-space: pre;
-            user-select: all;
-            letter-spacing: 0.3px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13.5px; line-height: 2; color: var(--text);
+            white-space: pre; user-select: all; letter-spacing: 0.2px;
         }
         .code-box .eur { color: var(--accent); font-weight: 700; }
 
         .copy-btn {
-            position: absolute;
-            top: 10px; right: 10px;
+            position: absolute; top: 10px; right: 10px;
             display: flex; align-items: center; gap: 5px; padding: 6px 14px;
             border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
             color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 12px;
             font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap;
         }
         .copy-btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-        .copy-btn.copied { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+        .copy-btn.copied { background: var(--success-bg); border-color: rgba(22,163,74,0.3); color: var(--success); }
         .copy-btn svg { width: 14px; height: 14px; }
 
         .summary {
             margin-top: 16px; padding: 14px 16px; background: var(--success-bg);
-            border: 1px solid rgba(52, 211, 153, 0.15); border-radius: 10px;
+            border: 1px solid rgba(22, 163, 74, 0.12); border-radius: 10px;
             font-size: 13px; color: var(--success); text-align: center; font-weight: 500;
+        }
+        .warning-box {
+            margin-top: 12px; padding: 12px 16px;
+            background: rgba(249, 115, 22, 0.06);
+            border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 10px;
+            font-size: 12px; color: var(--accent-2); text-align: center;
         }
         .error-msg {
             margin-top: 24px; padding: 14px 16px; background: var(--error-bg);
-            border: 1px solid rgba(248, 113, 113, 0.15); border-radius: 10px;
-            font-size: 13px; color: var(--error); text-align: center; font-weight: 500; animation: fadeUp 0.3s ease-out;
+            border: 1px solid rgba(220, 38, 38, 0.15); border-radius: 10px;
+            font-size: 13px; color: var(--error); text-align: center; font-weight: 500;
+            animation: fadeUp 0.3s ease-out;
         }
-        .reset-link { display: block; text-align: center; margin-top: 16px; color: var(--text-muted); font-size: 13px; cursor: pointer; text-decoration: none; transition: color 0.2s; }
+        .reset-link {
+            display: block; text-align: center; margin-top: 16px;
+            color: var(--text-muted); font-size: 13px; cursor: pointer;
+            text-decoration: none; transition: color 0.2s;
+        }
         .reset-link:hover { color: var(--text); }
+
+        footer {
+            margin-top: 40px;
+            font-size: 11px;
+            color: #d9c4b4;
+            letter-spacing: 0.3px;
+        }
     </style>
 </head>
 <body>
+    <a href="/guida" class="guide-btn" data-i18n-href="guida">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span data-i18n="guidaLink">Guida</span>
+    </a>
+
+    <div class="lang-switch">
+        <button class="lang-btn active" onclick="setLang('it')">IT</button>
+        <button class="lang-btn" onclick="setLang('en')">EN</button>
+    </div>
+
     <div class="container">
         <div class="header">
-            <div class="badge">Sistema Distribuzione</div>
-            <h1>Codici Voucher</h1>
-            <p>Seleziona tipo, edizione e importo per assegnare i codici</p>
+            <div class="badge" data-i18n="badge">Sistema Distribuzione</div>
+            <h1 data-i18n="title">Sistema distribuzione e annullamento codici carta del docente e giovani merito</h1>
+            <p data-i18n="subtitle">Seleziona tipo, edizione e importo per assegnare i codici</p>
         </div>
 
         <div class="card">
-            <form id="voucherForm">
-                <div class="field">
-                    <label>Tipo Voucher</label>
-                    <div class="toggle-group">
-                        <button type="button" class="toggle-btn active" data-value="CDD" onclick="selectTipo(this)">
-                            <span class="label-main">CDD</span>
-                            <span class="label-sub">Carta del Docente</span>
-                        </button>
-                        <button type="button" class="toggle-btn" data-value="YM" onclick="selectTipo(this)">
-                            <span class="label-main">YM</span>
-                            <span class="label-sub">Giovani Merito</span>
-                        </button>
+            <div class="mode-tabs">
+                <button class="mode-tab active" onclick="switchMode('assegna')" data-i18n="tabAssegna">Assegna</button>
+                <button class="mode-tab" onclick="switchMode('annulla')" data-i18n="tabAnnulla">Annulla</button>
+                <button class="mode-tab" onclick="switchMode('cerca')" data-i18n="tabCerca">Cerca</button>
+            </div>
+
+            <!-- Pannello Assegna -->
+            <div id="panelAssegna" class="panel active">
+                <form id="voucherForm">
+                    <div class="field">
+                        <label data-i18n="labelTipo">Tipo Voucher</label>
+                        <div class="toggle-group">
+                            <button type="button" class="toggle-btn active" data-value="CDD" onclick="selectTipo(this)">
+                                <span class="label-main">CDD</span>
+                                <span class="label-sub" data-i18n="subCDD">Carta del Docente</span>
+                            </button>
+                            <button type="button" class="toggle-btn" data-value="YM" onclick="selectTipo(this)">
+                                <span class="label-main">YM</span>
+                                <span class="label-sub" data-i18n="subYM">Giovani Merito</span>
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <div class="field">
-                    <label>Edizione</label>
-                    <div class="toggle-group">
-                        <button type="button" class="toggle-btn active" data-value="2024" onclick="selectEdizione(this)">
-                            <span class="label-main">2024</span>
-                        </button>
-                        <button type="button" class="toggle-btn" data-value="2025" onclick="selectEdizione(this)">
-                            <span class="label-main">2025</span>
-                        </button>
+                    <div class="field">
+                        <label data-i18n="labelEdizione">Edizione</label>
+                        <div class="toggle-group">
+                            <button type="button" class="toggle-btn active" data-value="2024" onclick="selectEdizione(this)">
+                                <span class="label-main">2024</span>
+                            </button>
+                            <button type="button" class="toggle-btn" data-value="2025" onclick="selectEdizione(this)">
+                                <span class="label-main">2025</span>
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <div class="field">
-                    <label>Importo Richiesto</label>
-                    <div class="input-wrap">
-                        <input type="number" class="input" id="importo" placeholder="0.00" step="0.01" min="0.01" required>
-                        <span class="unit">€</span>
+                    <div class="field">
+                        <label data-i18n="labelImporto">Importo Richiesto</label>
+                        <div class="input-wrap">
+                            <input type="number" class="input" id="importo" placeholder="0.00" step="0.01" min="0.01" required>
+                            <span class="unit">€</span>
+                        </div>
                     </div>
-                </div>
 
-                <button type="submit" class="submit-btn" id="submitBtn">Assegna Codici</button>
-            </form>
+                    <div class="field">
+                        <label data-i18n="labelOrdine">Ordine ID</label>
+                        <input type="text" class="input" id="ordine" data-i18n-placeholder="placeholderOrdine" placeholder="404-..." required>
+                    </div>
 
-            <div id="output"></div>
+                    <div class="field">
+                        <label data-i18n="labelContatto">Contatto ID</label>
+                        <input type="text" class="input" id="contatto" data-i18n-placeholder="placeholderContatto" placeholder="AX2..." required>
+                    </div>
+
+                    <div class="field">
+                        <label data-i18n="labelMotivazione">Motivazione</label>
+                        <select class="input" id="motivazione" required onchange="onMotivazioneChange()">
+                            <option value="" disabled selected data-i18n-opt="placeholderMotivazione">Seleziona motivazione...</option>
+                            <option value="DNR">DNR</option>
+                            <option value="Correlato al Reso" data-i18n-opt="optCorrelato">Correlato al Reso</option>
+                            <option value="Articolo Errato" data-i18n-opt="optArticoloErrato">Articolo Errato</option>
+                            <option value="Articolo Mancante" data-i18n-opt="optArticoloMancante">Articolo Mancante</option>
+                            <option value="Altro" data-i18n-opt="optAltro">Altro</option>
+                        </select>
+                    </div>
+
+                    <div class="field hidden" id="fieldDettaglio">
+                        <label data-i18n="labelDettaglio">Specifica motivazione</label>
+                        <input type="text" class="input" id="motivazione_dettaglio" data-i18n-placeholder="placeholderDettaglio" placeholder="Descrivi la motivazione...">
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn" data-i18n="btnSubmit">Assegna Codici</button>
+                </form>
+                <div id="outputAssegna"></div>
+            </div>
+
+            <!-- Pannello Annulla -->
+            <div id="panelAnnulla" class="panel">
+                <form id="annullaForm">
+                    <div class="field">
+                        <label data-i18n="labelCodiciDaAnnullare">Codici da annullare</label>
+                        <textarea class="input" id="codiciInput" data-i18n-placeholder="placeholderAnnulla" placeholder="AB12-CD34-EF56&#10;GH78-IJ90-KL12&#10;..." required></textarea>
+                        <p class="input-hint" data-i18n="hintAnnulla">Incolla i codici da ripristinare, uno per riga</p>
+                    </div>
+                    <button type="submit" class="submit-btn" id="annullaBtn" data-i18n="btnAnnulla">Ripristina Codici</button>
+                </form>
+                <div id="outputAnnulla"></div>
+            </div>
+            <!-- Pannello Cerca -->
+            <div id="panelCerca" class="panel">
+                <form id="cercaForm">
+                    <div class="field">
+                        <label data-i18n="labelCerca">Cerca per ordine, codice o contatto</label>
+                        <input type="text" class="input" id="cercaInput" data-i18n-placeholder="placeholderCerca" placeholder="404-... oppure AX2... oppure codice" required>
+                        <p class="input-hint" data-i18n="hintCerca">Inserisci un numero ordine, un codice voucher o un contatto</p>
+                    </div>
+                    <button type="submit" class="submit-btn" id="cercaBtn" data-i18n="btnCerca">Cerca</button>
+                </form>
+                <div id="outputCerca"></div>
+            </div>
         </div>
     </div>
+
+    <footer>Matteo Cambarau</footer>
 
     <script>
         const ICON_COPY = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
         const ICON_CHECK = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 
+        const TRANSLATIONS = {
+            it: {
+                badge: 'Sistema Distribuzione',
+                title: 'Sistema distribuzione e annullamento codici carta del docente e giovani merito',
+                subtitle: 'Seleziona tipo, edizione e importo per assegnare i codici',
+                tabAssegna: 'Assegna',
+                tabAnnulla: 'Annulla',
+                labelTipo: 'Tipo Voucher',
+                labelEdizione: 'Edizione',
+                labelImporto: 'Importo Richiesto',
+                subCDD: 'Carta del Docente',
+                subYM: 'Giovani Merito',
+                labelOrdine: 'Ordine ID',
+                placeholderOrdine: '404-...',
+                labelContatto: 'Contatto ID',
+                placeholderContatto: 'AX2...',
+                labelMotivazione: 'Motivazione',
+                placeholderMotivazione: 'Seleziona motivazione...',
+                optCorrelato: 'Correlato al Reso',
+                optArticoloErrato: 'Articolo Errato',
+                optArticoloMancante: 'Articolo Mancante',
+                optAltro: 'Altro',
+                labelDettaglio: 'Specifica motivazione',
+                placeholderDettaglio: 'Descrivi la motivazione...',
+                btnSubmit: 'Assegna Codici',
+                btnLoading: 'Elaborazione...',
+                resultsTitle: 'Codici Assegnati',
+                copyBtn: 'Copia',
+                copied: 'Copiato',
+                summary: (n, total, diff) =>
+                    `${n} codici assegnati per un totale di ${total} €${diff > 0 ? ` (eccedenza: +${diff.toFixed(2)} €)` : ''}`,
+                resetLink: '← Nuova assegnazione',
+                errConnessione: 'Errore di connessione al server',
+                labelCodiciDaAnnullare: 'Codici da annullare',
+                placeholderAnnulla: 'AB12-CD34-EF56\nGH78-IJ90-KL12\n...',
+                hintAnnulla: 'Incolla i codici da ripristinare, uno per riga',
+                btnAnnulla: 'Ripristina Codici',
+                annullaLoading: 'Ripristino...',
+                annullaTitle: 'Ripristino completato',
+                annullaSummary: (n) => `${n} codici ripristinati a "Disponibile"`,
+                annullaNonTrovati: (ids) => `Non trovati o già disponibili: ${ids.join(', ')}`,
+                resetAnnulla: '← Nuovo annullamento',
+                guidaLink: 'Guida',
+                tabCerca: 'Cerca',
+                labelCerca: 'Cerca per ordine, codice o contatto',
+                placeholderCerca: '404-... oppure AX2... oppure codice',
+                hintCerca: 'Inserisci un numero ordine, un codice voucher o un contatto',
+                btnCerca: 'Cerca',
+                cercaLoading: 'Ricerca...',
+                cercaNessunRisultato: 'Nessun risultato trovato',
+                cercaOrdine: 'Ordine',
+                cercaContatto: 'Contatto',
+                cercaData: 'Data',
+                cercaMotivazione: 'Motivazione',
+                cercaCodiciAssegnati: 'Codici assegnati',
+                cercaNessunCodice: 'Nessun codice assegnato',
+                resetCerca: '← Nuova ricerca',
+            },
+            en: {
+                badge: 'Distribution System',
+                title: "Voucher code distribution and cancellation system for Teacher's Card and Young Merit",
+                subtitle: 'Select type, edition and amount to assign codes',
+                tabAssegna: 'Assign',
+                tabAnnulla: 'Undo',
+                labelTipo: 'Voucher Type',
+                labelEdizione: 'Edition',
+                labelImporto: 'Requested Amount',
+                subCDD: "Teacher's Card",
+                subYM: 'Young Merit',
+                labelOrdine: 'Order ID',
+                placeholderOrdine: '404-...',
+                labelContatto: 'Contact ID',
+                placeholderContatto: 'AX2...',
+                labelMotivazione: 'Reason',
+                placeholderMotivazione: 'Select reason...',
+                optCorrelato: 'Return Related',
+                optArticoloErrato: 'Wrong Item',
+                optArticoloMancante: 'Missing Item',
+                optAltro: 'Other',
+                labelDettaglio: 'Specify reason',
+                placeholderDettaglio: 'Describe the reason...',
+                btnSubmit: 'Assign Codes',
+                btnLoading: 'Processing...',
+                resultsTitle: 'Assigned Codes',
+                copyBtn: 'Copy',
+                copied: 'Copied',
+                summary: (n, total, diff) =>
+                    `${n} codes assigned for a total of ${total} €${diff > 0 ? ` (excess: +${diff.toFixed(2)} €)` : ''}`,
+                resetLink: '← New assignment',
+                errConnessione: 'Connection error to the server',
+                labelCodiciDaAnnullare: 'Codes to undo',
+                placeholderAnnulla: 'AB12-CD34-EF56\nGH78-IJ90-KL12\n...',
+                hintAnnulla: 'Paste codes to restore, one per line',
+                btnAnnulla: 'Restore Codes',
+                annullaLoading: 'Restoring...',
+                annullaTitle: 'Restore completed',
+                annullaSummary: (n) => `${n} codes restored to "Available"`,
+                annullaNonTrovati: (ids) => `Not found or already available: ${ids.join(', ')}`,
+                resetAnnulla: '← New restore',
+                guidaLink: 'Guide',
+                tabCerca: 'Search',
+                labelCerca: 'Search by order, code or contact',
+                placeholderCerca: '404-... or AX2... or code',
+                hintCerca: 'Enter an order number, a voucher code or a contact',
+                btnCerca: 'Search',
+                cercaLoading: 'Searching...',
+                cercaNessunRisultato: 'No results found',
+                cercaOrdine: 'Order',
+                cercaContatto: 'Contact',
+                cercaData: 'Date',
+                cercaMotivazione: 'Reason',
+                cercaCodiciAssegnati: 'Assigned codes',
+                cercaNessunCodice: 'No codes assigned',
+                resetCerca: '← New search',
+            }
+        };
+
+        let lang = 'it';
         let tipo = 'CDD';
         let edizione = '2024';
 
+        function t(key) { return TRANSLATIONS[lang][key]; }
+
+        function setLang(newLang) {
+            lang = newLang;
+            document.documentElement.lang = newLang;
+            document.querySelectorAll('.lang-btn').forEach(b => {
+                b.classList.toggle('active', b.textContent.toLowerCase() === newLang);
+            });
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                if (typeof TRANSLATIONS[lang][key] === 'string') el.textContent = TRANSLATIONS[lang][key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.dataset.i18nPlaceholder;
+                if (TRANSLATIONS[lang][key]) el.placeholder = TRANSLATIONS[lang][key];
+            });
+            document.querySelectorAll('[data-i18n-opt]').forEach(el => {
+                const key = el.dataset.i18nOpt;
+                if (TRANSLATIONS[lang][key]) el.textContent = TRANSLATIONS[lang][key];
+            });
+            const btn = document.getElementById('submitBtn');
+            if (!btn.disabled) btn.textContent = t('btnSubmit');
+            const abtn = document.getElementById('annullaBtn');
+            if (!abtn.disabled) abtn.textContent = t('btnAnnulla');
+            const cbtn = document.getElementById('cercaBtn');
+            if (!cbtn.disabled) cbtn.textContent = t('btnCerca');
+        }
+
+        function switchMode(mode) {
+            document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelector(`.mode-tab[onclick="switchMode('${mode}')"]`).classList.add('active');
+            const panelMap = { assegna: 'panelAssegna', annulla: 'panelAnnulla', cerca: 'panelCerca' };
+            document.getElementById(panelMap[mode]).classList.add('active');
+        }
+
         function selectTipo(btn) {
-            document.querySelectorAll('.field:nth-child(1) .toggle-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#panelAssegna .field:nth-child(1) .toggle-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             tipo = btn.dataset.value;
         }
         function selectEdizione(btn) {
-            document.querySelectorAll('.field:nth-child(2) .toggle-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#panelAssegna .field:nth-child(2) .toggle-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             edizione = btn.dataset.value;
         }
 
+        function onMotivazioneChange() {
+            const val = document.getElementById('motivazione').value;
+            const fieldDettaglio = document.getElementById('fieldDettaglio');
+            const inputDettaglio = document.getElementById('motivazione_dettaglio');
+            if (val === 'Altro') {
+                fieldDettaglio.classList.remove('hidden');
+                inputDettaglio.required = true;
+            } else {
+                fieldDettaglio.classList.add('hidden');
+                inputDettaglio.required = false;
+                inputDettaglio.value = '';
+            }
+        }
+
         function copyAll(text, btn) {
-            navigator.clipboard.writeText(text).then(() => {
+            function onSuccess() {
                 btn.classList.add('copied');
-                btn.innerHTML = `${ICON_CHECK} Copiato`;
+                btn.innerHTML = `${ICON_CHECK} ${t('copied')}`;
                 setTimeout(() => {
                     btn.classList.remove('copied');
-                    btn.innerHTML = `${ICON_COPY} Copia`;
+                    btn.innerHTML = `${ICON_COPY} ${t('copyBtn')}`;
                 }, 1500);
-            });
+            }
+
+            function fallback() {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    onSuccess();
+                } catch (e) {}
+                document.body.removeChild(ta);
+            }
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(onSuccess).catch(fallback);
+            } else {
+                fallback();
+            }
         }
 
         function buildResultsHTML(codici, totale, importo) {
@@ -244,65 +621,211 @@
             const htmlLines = codici.map(c =>
                 `${c.codice_id} <span class="eur">EUR ${c.importo.toFixed(2)}</span>`
             ).join('\n');
-
             const diff = totale - importo;
-            const diffText = diff > 0 ? ` (eccedenza: +${diff.toFixed(2)} €)` : '';
             const escaped = plainLines.replace(/'/g, "\\'").replace(/\n/g, "\\n");
 
             return `
                 <div class="results">
                     <div class="results-header">
-                        <h2>Codici Assegnati</h2>
+                        <h2>${t('resultsTitle')}</h2>
                         <span class="totale">${totale.toFixed(2)} €</span>
                     </div>
                     <div class="code-box-wrap">
                         <div class="code-box">${htmlLines}</div>
-                        <button class="copy-btn" onclick="copyAll('${escaped}', this)">${ICON_COPY} Copia</button>
+                        <button class="copy-btn" onclick="copyAll('${escaped}', this)">${ICON_COPY} ${t('copyBtn')}</button>
                     </div>
                     <div class="summary">
-                        ${codici.length} codici assegnati per un totale di ${totale.toFixed(2)} €${diffText}
+                        ${t('summary')(codici.length, totale.toFixed(2), diff)}
                     </div>
-                    <a class="reset-link" onclick="resetForm()">← Nuova assegnazione</a>
+                    <a class="reset-link" onclick="resetAssegna()">${t('resetLink')}</a>
                 </div>`;
         }
 
+        function buildAnnullaResultHTML(data) {
+            let html = `
+                <div class="results">
+                    <div class="results-header">
+                        <h2>${t('annullaTitle')}</h2>
+                        <span class="totale">${data.ripristinati}</span>
+                    </div>`;
+
+            if (data.codici_ripristinati.length > 0) {
+                const lines = data.codici_ripristinati.join('\n');
+                html += `
+                    <div class="code-box-wrap">
+                        <div class="code-box">${data.codici_ripristinati.join('\n')}</div>
+                    </div>
+                    <div class="summary">${t('annullaSummary')(data.ripristinati)}</div>`;
+            }
+
+            if (data.non_trovati.length > 0) {
+                html += `<div class="warning-box">${t('annullaNonTrovati')(data.non_trovati)}</div>`;
+            }
+
+            html += `<a class="reset-link" onclick="resetAnnulla()">${t('resetAnnulla')}</a></div>`;
+            return html;
+        }
+
+        // Form assegna
         document.getElementById('voucherForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const importo = parseFloat(document.getElementById('importo').value);
             if (!importo || importo <= 0) return;
 
+            const ordine = document.getElementById('ordine').value.trim();
+            const contatto = document.getElementById('contatto').value.trim();
+            const motivazione = document.getElementById('motivazione').value;
+            const motivazione_dettaglio = document.getElementById('motivazione_dettaglio').value.trim();
+
             const btn = document.getElementById('submitBtn');
-            const output = document.getElementById('output');
+            const output = document.getElementById('outputAssegna');
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> Elaborazione...';
+            btn.innerHTML = `<span class="spinner"></span> ${t('btnLoading')}`;
             output.innerHTML = '';
 
             try {
                 const res = await fetch('/assegna', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tipo, edizione, importo })
+                    body: JSON.stringify({ tipo, edizione, importo, ordine, contatto, motivazione, motivazione_dettaglio })
                 });
                 const data = await res.json();
-
                 if (!res.ok) {
                     output.innerHTML = `<div class="error-msg">${data.error}</div>`;
                     return;
                 }
-
                 output.innerHTML = buildResultsHTML(data.codici, data.totale, data.importo_richiesto);
             } catch (err) {
-                output.innerHTML = `<div class="error-msg">Errore di connessione al server</div>`;
+                output.innerHTML = `<div class="error-msg">${t('errConnessione')}</div>`;
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = 'Assegna Codici';
+                btn.textContent = t('btnSubmit');
             }
         });
 
-        function resetForm() {
+        // Form annulla
+        document.getElementById('annullaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const raw = document.getElementById('codiciInput').value;
+            const codici = raw.split('\n').map(s => s.trim().split(/\s+/)[0]).filter(Boolean);
+            if (codici.length === 0) return;
+
+            const btn = document.getElementById('annullaBtn');
+            const output = document.getElementById('outputAnnulla');
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner"></span> ${t('annullaLoading')}`;
+            output.innerHTML = '';
+
+            try {
+                const res = await fetch('/annulla', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ codici })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    output.innerHTML = `<div class="error-msg">${data.error}</div>`;
+                    return;
+                }
+                output.innerHTML = buildAnnullaResultHTML(data);
+            } catch (err) {
+                output.innerHTML = `<div class="error-msg">${t('errConnessione')}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = t('btnAnnulla');
+            }
+        });
+
+        function buildCercaResultHTML(ordini) {
+            if (ordini.length === 0) {
+                return `<div class="error-msg" style="background:rgba(249,115,22,0.06);border-color:rgba(249,115,22,0.2);color:var(--accent-2)">${t('cercaNessunRisultato')}</div>`;
+            }
+
+            let html = '<div class="results">';
+            ordini.forEach(o => {
+                const codiciHTML = o.codici.length === 0
+                    ? `<p style="font-size:13px;color:var(--text-muted);margin-top:8px">${t('cercaNessunCodice')}</p>`
+                    : `<div class="code-box" style="margin-top:10px">${o.codici.map(c =>
+                        `${c.codice_id} <span class="eur">EUR ${c.importo.toFixed(2)}</span>  ${c.tipo} ${c.edizione}`
+                      ).join('\n')}</div>`;
+
+                const motLabel = o.motivazione_dettaglio ? `${o.motivazione} — ${o.motivazione_dettaglio}` : o.motivazione;
+
+                html += `
+                <div style="padding:16px;border:1px solid var(--border);border-radius:10px;margin-bottom:14px">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+                        <div>
+                            <span style="font-size:13px;font-weight:700;color:var(--text)">${t('cercaOrdine')}: <span style="color:var(--accent)">${o.ordine}</span></span><br>
+                            <span style="font-size:12px;color:var(--text-muted)">${t('cercaContatto')}: ${o.contatto}</span>
+                        </div>
+                        <div style="text-align:right">
+                            <span style="font-size:11px;color:var(--text-muted)">${o.data || ''}</span><br>
+                            <span style="font-size:11px;background:var(--accent-soft);color:var(--accent-2);padding:2px 8px;border-radius:10px;font-weight:600">${motLabel}</span>
+                        </div>
+                    </div>
+                    <div style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--text-muted);margin-top:10px">${t('cercaCodiciAssegnati')} (${o.codici.length})</div>
+                    ${codiciHTML}
+                </div>`;
+            });
+
+            html += `<a class="reset-link" onclick="resetCerca()">${t('resetCerca')}</a></div>`;
+            return html;
+        }
+
+        // Form cerca
+        document.getElementById('cercaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = document.getElementById('cercaInput').value.trim();
+            if (!query) return;
+
+            const btn = document.getElementById('cercaBtn');
+            const output = document.getElementById('outputCerca');
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner"></span> ${t('cercaLoading')}`;
+            output.innerHTML = '';
+
+            try {
+                const res = await fetch('/cerca', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    output.innerHTML = `<div class="error-msg">${data.error}</div>`;
+                    return;
+                }
+                output.innerHTML = buildCercaResultHTML(data.ordini);
+            } catch (err) {
+                output.innerHTML = `<div class="error-msg">${t('errConnessione')}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = t('btnCerca');
+            }
+        });
+
+        function resetCerca() {
+            document.getElementById('cercaInput').value = '';
+            document.getElementById('outputCerca').innerHTML = '';
+            document.getElementById('cercaInput').focus();
+        }
+
+        function resetAssegna() {
             document.getElementById('importo').value = '';
-            document.getElementById('output').innerHTML = '';
+            document.getElementById('ordine').value = '';
+            document.getElementById('contatto').value = '';
+            document.getElementById('motivazione').value = '';
+            document.getElementById('motivazione_dettaglio').value = '';
+            document.getElementById('fieldDettaglio').classList.add('hidden');
+            document.getElementById('motivazione_dettaglio').required = false;
+            document.getElementById('outputAssegna').innerHTML = '';
             document.getElementById('importo').focus();
+        }
+
+        function resetAnnulla() {
+            document.getElementById('codiciInput').value = '';
+            document.getElementById('outputAnnulla').innerHTML = '';
+            document.getElementById('codiciInput').focus();
         }
     </script>
 </body>
