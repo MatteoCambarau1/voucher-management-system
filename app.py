@@ -197,17 +197,32 @@ def annulla_codici():
 
         placeholders = ', '.join(['%s'] * len(codici_ids))
         cursor.execute(
-            f"SELECT CodiceID FROM Codici WHERE CodiceID IN ({placeholders}) AND StatoCodice = 'Usato'",
+            f"SELECT CodiceID, IdentificativoOrdine FROM Codici WHERE CodiceID IN ({placeholders}) AND StatoCodice = 'Usato'",
             codici_ids
         )
-        trovati = [row[0] for row in cursor.fetchall()]
+        rows = cursor.fetchall()
+        trovati = [row[0] for row in rows]
+        ordini_ids = list({row[1] for row in rows if row[1] is not None})
         non_trovati = [c for c in codici_ids if c not in trovati]
 
         if trovati:
-            cursor.executemany(
-                "UPDATE Codici SET StatoCodice = 'Disponibile', IdentificativoOrdine = NULL WHERE CodiceID = %s",
-                [(c,) for c in trovati]
-            )
+            # Ripristina TUTTI i codici legati agli ordini coinvolti
+            if ordini_ids:
+                ord_placeholders = ', '.join(['%s'] * len(ordini_ids))
+                cursor.execute(
+                    f"UPDATE Codici SET StatoCodice = 'Disponibile', IdentificativoOrdine = NULL WHERE IdentificativoOrdine IN ({ord_placeholders})",
+                    ordini_ids
+                )
+                cursor.execute(
+                    f"DELETE FROM Ordini WHERE IdentificativoOrdine IN ({ord_placeholders})",
+                    ordini_ids
+                )
+            else:
+                # Codici senza ordine associato (caso raro)
+                cursor.executemany(
+                    "UPDATE Codici SET StatoCodice = 'Disponibile', IdentificativoOrdine = NULL WHERE CodiceID = %s",
+                    [(c,) for c in trovati]
+                )
             conn.commit()
 
         cursor.close()
