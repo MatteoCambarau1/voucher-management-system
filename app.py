@@ -1,8 +1,11 @@
 from flask import Flask, render_template, request, jsonify
 import mysql.connector
 from decimal import Decimal, ROUND_UP
+from admin import admin_bp
+from notifications import controlla_e_notifica
 
 app = Flask(__name__)
+app.register_blueprint(admin_bp)
 
 # Configurazione database
 DB_CONFIG = {
@@ -154,6 +157,9 @@ def assegna_codici():
 
         cursor.close()
         conn.close()
+
+        # Controlla i livelli residui e invia email se sotto soglia
+        controlla_e_notifica()
 
         codici_response = []
         totale = Decimal('0')

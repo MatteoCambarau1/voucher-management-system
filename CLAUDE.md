@@ -25,19 +25,34 @@ CDD_YM/
 ├── README.md                  # End-user installation guide and API reference
 ├── CLAUDE.md                  # This file
 └── CDD_YM/                    # Application root
-    ├── app.py                 # Flask application: routes, business logic, DB access
+    ├── app.py                 # Flask application: core routes, business logic, DB access
+    ├── admin.py               # Flask Blueprint: admin routes (/admin, /carica, /admin/stato-codici, /admin/invia-notifica)
+    ├── notifications.py       # Email monitoring: code-level threshold check and SMTP sending
+    ├── carica_codici.py       # CLI script: bulk CSV loader (alternative to web UI upload)
     ├── requirements.txt       # Pinned Python dependencies
     ├── .gitignore
+    ├── static/
+    │   ├── logo.svg           # Full horizontal logo (icon + wordmark + tagline)
+    │   └── logo-icon.svg      # Icon-only logo (scalable, for favicon/avatar use)
     └── templates/
         ├── index.html         # Main UI — Assign / Restore / Search tabs (HTML + CSS + JS)
+        ├── admin.html         # Admin panel — Carica Codici / Monitoraggio tabs
         └── guida.html         # Operator guide page with step-by-step instructions
 ```
 
 ### Key file roles
 
-**`app.py`** is the single backend file. It contains everything: Flask route definitions, the voucher selection algorithm, database helper functions, and startup connection check. All business logic lives here.
+**`app.py`** contains the core business logic: Flask route definitions, the voucher selection algorithm, database helper functions, and startup connection check. It registers `admin_bp` from `admin.py` and calls `controlla_e_notifica()` from `notifications.py` after every successful assignment.
+
+**`admin.py`** is a Flask Blueprint (`admin_bp`) registered in `app.py`. It owns all admin-facing routes. It has its own `DB_CONFIG` copy (see Section 7 — DB_CONFIG duplication). Admin routes are accessible only via direct URL — there is no link from the main UI.
+
+**`notifications.py`** contains the monitoring and email logic. It defines `SOGLIA` (threshold), `get_conteggio_codici()` (returns counts grouped by Tipo + Edizione + Importo), `controlla_e_notifica()` (checks counts, sends email if any taglio is below threshold), and `_invia_email()` (SMTP sending). Configure `EMAIL_CONFIG` here before going to production.
+
+**`carica_codici.py`** is a standalone CLI script for loading codes from a CSV file. It replicates the same validation and INSERT IGNORE logic as the web upload. Use it when terminal access is available. Run with: `python3 carica_codici.py <file.csv>`
 
 **`templates/index.html`** is a self-contained frontend. All CSS (via `<style>`) and JavaScript (via `<script>`) are inline in this file. There are no external static assets. The JS includes a complete i18n system (`TRANSLATIONS` object) for Italian and English.
+
+**`templates/admin.html`** is the admin panel UI. It has two tabs: **Carica Codici** (CSV file upload) and **Monitoraggio** (per-taglio availability dashboard with manual notification trigger). CSS is inline and duplicated — changes must also be applied to `index.html` and `guida.html`.
 
 **`templates/guida.html`** is a static informational page for operators. It shares the same visual design as `index.html` but its CSS is duplicated inline — there is no shared stylesheet. Changes to the visual design must be applied to both files manually.
 
@@ -130,9 +145,13 @@ The database is named `CDD_YM` and contains two tables.
 
 ## 6. Code Conventions
 
-### Python (`app.py`)
+### Python (`app.py`, `admin.py`, `notifications.py`)
 
 **Naming**: functions use `snake_case` in Italian (e.g. `calcola_codici_necessari`, `marca_codici_usati`, `crea_ordine`). Variables and database column references also use Italian names matching the schema. Maintain this consistency when adding functions.
+
+**Blueprint pattern**: admin routes live in `admin.py` as a Flask Blueprint (`admin_bp`). New admin-only features should be added there, not in `app.py`. Register new blueprints in `app.py` with `app.register_blueprint(...)`.
+
+**Notification side effect**: `/assegna` calls `controlla_e_notifica()` after every successful commit. This is a read + optional email send, and it runs synchronously in the request. Keep it fast — do not add blocking operations to `notifications.py`.
 
 **Monetary values**: always use `Decimal` for any arithmetic involving euro amounts. Convert floats immediately on input with `Decimal(str(value))`. Never perform arithmetic directly on `float` values fetched from the database — cast them first.
 
@@ -180,9 +199,17 @@ The startup block in `__main__` opens a test connection to verify connectivity. 
 
 `['2024', '2025']` (edition validation, line 124) and `MOTIVAZIONI_VALIDE` (line 15) are the two places where domain values are hardcoded. Adding a new edition year or motivation requires updating both `app.py` (backend validation) and `index.html` (frontend dropdowns and translations). There is no single source of truth for these values.
 
+### DB_CONFIG duplication
+
+`DB_CONFIG` and `get_db_connection()` are defined independently in `app.py`, `admin.py`, `notifications.py`, and `carica_codici.py`. This is intentional for PoC simplicity (each module is self-contained). When the database password or host changes, all four files must be updated. The receiving company should consolidate this into a single `config.py` or use environment variables.
+
+### Email notification side effects in `/assegna`
+
+After every successful code assignment, `/assegna` calls `controlla_e_notifica()`. If the email is configured and a taglio is below `SOGLIA`, an SMTP connection is opened synchronously during the request. If the SMTP server is slow or unreachable, this will delay the response. For production, move the notification call to a background task or queue.
+
 ### CSS duplication between templates
 
-`index.html` and `guida.html` share the same CSS custom properties and base styles, but the CSS is duplicated in full in each file. When modifying colours, spacing, or typography, both files must be updated. Consider this before making visual changes.
+`index.html`, `admin.html`, and `guida.html` share the same CSS custom properties and base styles, but the CSS is duplicated in full in each file. When modifying colours, spacing, or typography, all three files must be updated. Consider this before making visual changes.
 
 ---
 
@@ -213,9 +240,41 @@ The startup block in `__main__` opens a test connection to verify connectivity. 
 
 ### Adding a new edition year
 
-1. Add the year string to the validation list in `/assegna` (`if edizione not in ['2024', '2025']`).
-2. Add a toggle button for the new year in the Edizione field group in `index.html`.
-3. Populate the `Codici` table with codes for the new edition.
+1. Add the year string to the validation list in `/assegna` (`if edizione not in ['2024', '2025']`) in `app.py`.
+2. Add the year string to the validation list in `carica_codici` in `admin.py` and in `carica_codici.py`.
+3. Add a toggle button for the new year in the Edizione field group in `index.html`.
+4. Populate the `Codici` table with codes for the new edition (via the admin upload UI or `carica_codici.py`).
+
+### Loading codes from CSV
+
+Two options are available:
+
+**Web UI (recommended for non-technical users):**
+Navigate to `/admin` → tab "Carica Codici" → select a `.csv` file → submit. The backend validates each row and runs `INSERT IGNORE`. Results (inserted / duplicates / errors) are shown on screen.
+
+**CLI (for operators with terminal access):**
+```bash
+python3 carica_codici.py codici_nuovi.csv
+```
+
+Both paths use `INSERT IGNORE`, so re-uploading a file is safe. The expected CSV columns are: `CodiceID`, `Tipo`, `Importo`, `Edizione`.
+
+### Adding an admin route
+
+1. Add the route function to `admin.py` using `@admin_bp.route(...)`.
+2. Follow the same error-response pattern as existing routes (`jsonify({'error': '...'})`, appropriate status codes).
+3. If the route needs database access, use the local `get_db_connection()` defined in `admin.py`.
+4. Add a corresponding section in `admin.html` if UI is needed.
+
+### Configuring email notifications
+
+Open `notifications.py` and fill in `EMAIL_CONFIG`:
+- `smtp_host` / `smtp_port`: e.g. `smtp.gmail.com` / `587` for Gmail, `smtp.office365.com` / `587` for Outlook
+- `username` / `password`: sender credentials (use an App Password for Gmail)
+- `destinatario`: the maintainer's email address
+
+The threshold is `SOGLIA = 50` at the top of the file. Change it to adjust the alert level.
+Notifications are per taglio (Tipo + Edizione + Importo). Each denomination is checked independently.
 
 ### Extending the search
 
@@ -237,6 +296,11 @@ The `/cerca` endpoint executes a UNION query that searches `Ordini.Ordine`, `Ord
 
 **Do not add Flask-Login, sessions, or authentication middleware.** This is a proof-of-concept with no authentication layer. Adding auth is the responsibility of the receiving company and should be designed as part of a broader security architecture, not bolted on top of the existing routes.
 
+**Do not expose `/admin` publicly without authentication.** The admin panel is currently protected only by URL obscurity. Before deploying, the receiving company must add proper access control (at minimum HTTP Basic Auth or a reverse-proxy rule).
+
+**Do not consolidate DB_CONFIG into a single file without updating all four consumers.** `app.py`, `admin.py`, `notifications.py`, and `carica_codici.py` each define their own `DB_CONFIG`. If you create a shared `config.py`, update all four import sites and verify startup still works.
+
 ---
 
 *Last updated: March 2026 — Matteo Cambarau*
+*Branch: `feature/carica-codici` — changes not yet merged to `main`*
