@@ -11,7 +11,7 @@ from email.mime.multipart import MIMEMultipart
 import mysql.connector
 
 # --- Soglia di attenzione (numero codici disponibili) ---
-SOGLIA = 50
+SOGLIA = 20
 
 # --- Configurazione email ---
 # Compilare prima di andare in produzione.

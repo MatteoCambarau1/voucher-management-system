@@ -139,7 +139,7 @@ The database is named `CDD_YM` and contains two tables.
 
 ### Relationship
 
-`Codici.IdentificativoOrdine` is a soft foreign key to `Ordini`. When a restore operation runs, it sets `IdentificativoOrdine = NULL` on the restored codes. The `Ordini` row is intentionally kept for audit purposes — restore operations do not delete order records.
+`Codici.IdentificativoOrdine` is a soft foreign key to `Ordini`. When a restore operation runs, it sets codes back to `'Disponibile'`, clears `IdentificativoOrdine`, and **deletes the corresponding `Ordini` record**. Restore is used exclusively to correct erroneous assignments — the order record is intentionally removed so the assignment leaves no trace.
 
 ---
 
@@ -286,7 +286,7 @@ The `/cerca` endpoint executes a UNION query that searches `Ordini.Ordine`, `Ord
 
 **Do not use `float` for monetary calculations.** Any arithmetic on euro amounts that bypasses `Decimal` will introduce rounding errors. This will cause the algorithm to select incorrect code combinations.
 
-**Do not delete `Ordini` rows during a restore operation.** The restore endpoint (`/annulla`) sets codes back to `'Disponibile'` and clears `IdentificativoOrdine`, but intentionally leaves the `Ordini` record intact. Deleting order records breaks the audit trail. If you add a bulk-restore or admin feature, maintain this constraint.
+**Do not preserve `Ordini` rows after a restore operation.** The restore endpoint (`/annulla`) is used exclusively to correct erroneous assignments. It sets codes back to `'Disponibile'`, clears `IdentificativoOrdine`, and deletes the `Ordini` record — so the mistaken assignment leaves no trace in the database.
 
 **Do not change the `error` key name in error responses.** The frontend checks `data.error` in every fetch handler. Renaming it to `message`, `detail`, or anything else will break all error display in the UI silently (no errors shown, no feedback to the operator).
 
