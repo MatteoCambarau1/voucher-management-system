@@ -20,9 +20,60 @@ MOTIVAZIONI_VALIDE = ('DNR', 'Correlato al Reso', 'Articolo Errato', 'Articolo M
 def get_db_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
+def ensure_configurazione():
+    """Crea la tabella Configurazione e il record distribuzione_attiva se non esistono."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS Configurazione (
+            chiave VARCHAR(64) PRIMARY KEY,
+            valore VARCHAR(64) NOT NULL
+        )
+    """)
+    cursor.execute(
+        "INSERT IGNORE INTO Configurazione (chiave, valore) VALUES ('distribuzione_attiva', '1')"
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def is_distribuzione_attiva():
+    """Restituisce True se la distribuzione codici è attiva."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT valore FROM Configurazione WHERE chiave = 'distribuzione_attiva'")
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return row is not None and row[0] == '1'
+
+def is_campagna_attiva(tipo, edizione):
+    """Restituisce True se la campagna tipo+edizione non è disabilitata."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT valore FROM Configurazione WHERE chiave = %s",
+        (f'disabilitato_{tipo}_{edizione}',)
+    )
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return row is None or row[0] != '1'
+
 def check_codici_disponibili(tipo, edizione):
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # Recupera i tagli disabilitati per questa campagna
+    prefix = f'disabilitato_{tipo}_{edizione}_'
+    cursor.execute(
+        "SELECT chiave FROM Configurazione WHERE chiave LIKE %s AND valore = '1'",
+        (prefix + '%',)
+    )
+    tagli_disabilitati = set()
+    for (chiave,) in cursor.fetchall():
+        tagli_disabilitati.add(chiave[len(prefix):])
+
     query = """
         SELECT CodiceID, Tipo, Importo, Edizione
         FROM Codici
@@ -35,6 +86,10 @@ def check_codici_disponibili(tipo, edizione):
     righe = cursor.fetchall()
     cursor.close()
     conn.close()
+
+    if tagli_disabilitati:
+        righe = [r for r in righe if f'{float(r[2]):.2f}' not in tagli_disabilitati]
+
     return righe
 
 def calcola_codici_necessari(tipo, edizione, importo_richiesto):
@@ -110,6 +165,9 @@ def assegna_codici():
     Riceve JSON: { tipo, edizione, importo, ordine, contatto, motivazione, motivazione_dettaglio }
     Restituisce JSON: { codici, totale, importo_richiesto, identificativo_ordine }
     """
+    if not is_distribuzione_attiva():
+        return jsonify({'error': 'Sistema di distribuzione temporaneamente disattivato'}), 503
+
     try:
         data = request.get_json()
 
@@ -136,6 +194,9 @@ def assegna_codici():
             return jsonify({'error': 'Motivazione non valida'}), 400
         if motivazione == 'Altro' and not motivazione_dettaglio:
             return jsonify({'error': 'Specificare la motivazione per "Altro"'}), 400
+
+        if not is_campagna_attiva(tipo, edizione):
+            return jsonify({'error': f'Campagna {tipo} {edizione} temporaneamente disabilitata'}), 503
 
         codici_selezionati = calcola_codici_necessari(tipo, edizione, importo)
         if not codici_selezionati:
@@ -329,6 +390,7 @@ if __name__ == '__main__':
         conn = get_db_connection()
         conn.close()
         print("✓ Connessione al database MySQL riuscita")
+        ensure_configurazione()
     except Exception as e:
         print(f"✗ Errore connessione database: {e}")
         print("Verifica che MySQL sia attivo e che le credenziali siano corrette")

@@ -223,6 +223,84 @@
         .mon-actions { display: flex; gap: 10px; margin-bottom: 12px; }
         .last-update { font-size: 11px; color: #d9c4b4; text-align: right; margin-top: 8px; }
 
+        /* Sistema — sezione campagne/tagli */
+        .sistema-sezione {
+            margin-top: 24px; border-top: 1px solid var(--border); padding-top: 20px;
+        }
+        .sistema-sezione-title {
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-muted); margin-bottom: 14px;
+        }
+        .campagna-gruppo { margin-bottom: 16px; }
+        .campagna-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px; border-radius: 8px; margin-bottom: 6px;
+            background: var(--accent-soft); border: 1px solid rgba(249,115,22,0.18);
+        }
+        .campagna-header.disattiva {
+            background: var(--error-bg); border-color: rgba(220,38,38,0.18);
+        }
+        .campagna-nome { font-size: 13px; font-weight: 700; color: var(--text); }
+        .campagna-header.disattiva .campagna-nome { color: var(--error); }
+        .taglio-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 7px 14px; border-radius: 6px; margin-bottom: 4px;
+            border: 1px solid var(--border);
+        }
+        .taglio-row.disattivo { opacity: 0.5; }
+        .taglio-importo { font-size: 14px; font-weight: 700; min-width: 64px; }
+        .taglio-disponibili { flex: 1; font-size: 12px; color: var(--text-muted); }
+        .campagna-disattiva-nota {
+            font-size: 11px; color: var(--error); padding: 5px 10px;
+            background: var(--error-bg); border: 1px solid rgba(220,38,38,0.15);
+            border-radius: 6px; margin-bottom: 6px;
+        }
+        .item-toggle {
+            padding: 3px 10px; border-radius: 20px; border: 1px solid transparent;
+            font-size: 11px; font-weight: 700; cursor: pointer;
+            transition: all 0.18s; font-family: 'DM Sans', sans-serif; white-space: nowrap;
+        }
+        .item-toggle.attivo { background: transparent; color: var(--text-muted); border-color: var(--border); }
+        .item-toggle.attivo:hover { color: var(--error); border-color: rgba(220,38,38,0.4); background: var(--error-bg); }
+        .item-toggle.disattivo { background: var(--error-bg); color: var(--error); border-color: rgba(220,38,38,0.3); }
+        .item-toggle.disattivo:hover { background: rgba(220,38,38,0.18); }
+
+        /* Sistema on/off */
+        .sistema-stato {
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
+            padding: 24px 0;
+        }
+        .stato-indicator {
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+        .stato-dot {
+            width: 64px; height: 64px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; transition: background 0.3s;
+        }
+        .stato-dot.attivo { background: var(--success-bg); border: 2px solid rgba(22,163,74,0.3); }
+        .stato-dot.disattivo { background: var(--error-bg); border: 2px solid rgba(220,38,38,0.3); }
+        .stato-label { font-size: 16px; font-weight: 700; }
+        .stato-label.attivo { color: var(--success); }
+        .stato-label.disattivo { color: var(--error); }
+        .stato-desc { font-size: 13px; color: var(--text-muted); text-align: center; max-width: 280px; line-height: 1.5; }
+        .toggle-btn {
+            width: 100%; padding: 16px; border: none; border-radius: var(--radius);
+            font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700;
+            cursor: pointer; transition: all 0.2s; margin-top: 8px;
+        }
+        .toggle-btn.disattiva {
+            background: linear-gradient(135deg, var(--error) 0%, #991b1b 100%);
+            color: #fff; box-shadow: 0 4px 20px rgba(220,38,38,0.3);
+        }
+        .toggle-btn.disattiva:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(220,38,38,0.45); }
+        .toggle-btn.attiva {
+            background: linear-gradient(135deg, var(--success) 0%, #15803d 100%);
+            color: #fff; box-shadow: 0 4px 20px rgba(22,163,74,0.3);
+        }
+        .toggle-btn.attiva:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(22,163,74,0.45); }
+        .toggle-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
         /* Shared output */
         .summary { margin-top: 16px; padding: 14px 16px; background: var(--success-bg); border: 1px solid rgba(22,163,74,0.12); border-radius: 10px; font-size: 13px; color: var(--success); text-align: center; font-weight: 500; }
         .error-msg { margin-top: 16px; padding: 14px 16px; background: var(--error-bg); border: 1px solid rgba(220,38,38,0.15); border-radius: 10px; font-size: 13px; color: var(--error); text-align: center; font-weight: 500; animation: fadeUp 0.3s ease-out; }
@@ -249,6 +327,7 @@
             <div class="mode-tabs">
                 <button class="mode-tab active" onclick="switchTab('carica')">Carica Codici</button>
                 <button class="mode-tab" onclick="switchTab('monitoraggio')">Monitoraggio</button>
+                <button class="mode-tab" onclick="switchTab('sistema')">Sistema</button>
             </div>
 
             <!-- Tab: Carica Codici -->
@@ -277,6 +356,24 @@
                 <div id="outputUpload"></div>
             </div>
 
+            <!-- Tab: Sistema -->
+            <div id="panelSistema" class="panel">
+                <div class="sistema-stato">
+                    <div class="stato-indicator" id="statoIndicator">
+                        <div class="stato-dot" id="statoDot"></div>
+                        <div class="stato-label" id="statoLabel">Caricamento...</div>
+                    </div>
+                    <p class="stato-desc" id="statoDesc"></p>
+                    <button class="toggle-btn" id="toggleBtn" onclick="toggleSistema()">—</button>
+                </div>
+                <div id="sistemaOutput"></div>
+                <div class="sistema-sezione">
+                    <div class="sistema-sezione-title">Gestione Campagne e Tagli</div>
+                    <div id="campagneGrid"><p style="color:var(--text-muted);font-size:13px;">Caricamento...</p></div>
+                    <div id="campagneOutput"></div>
+                </div>
+            </div>
+
             <!-- Tab: Monitoraggio -->
             <div id="panelMonitoraggio" class="panel">
                 <div id="monGrid"></div>
@@ -298,9 +395,10 @@
             document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
             document.querySelector(`.mode-tab[onclick="switchTab('${tab}')"]`).classList.add('active');
-            const map = { carica: 'panelCarica', monitoraggio: 'panelMonitoraggio' };
+            const map = { carica: 'panelCarica', monitoraggio: 'panelMonitoraggio', sistema: 'panelSistema' };
             document.getElementById(map[tab]).classList.add('active');
             if (tab === 'monitoraggio') caricaMonitoraggio();
+            if (tab === 'sistema') caricaStatoSistema();
         }
 
         // --- Upload ---
@@ -383,7 +481,6 @@
                 return '<p style="text-align:center; color:var(--text-muted); padding:20px 0;">Nessun codice nel database.</p>';
             }
 
-            // Raggruppa per Tipo + Edizione
             const gruppi = {};
             codici.forEach(c => {
                 const key = `${c.tipo} · ${c.edizione}`;
@@ -428,6 +525,148 @@
                     'Aggiornato: ' + new Date().toLocaleTimeString('it-IT');
             } catch (err) {
                 grid.innerHTML = '<div class="error-msg">Errore di connessione. Riprova.</div>';
+            }
+        }
+
+        // --- Sistema ON/OFF ---
+        function renderStatoSistema(attivo) {
+            const dot = document.getElementById('statoDot');
+            const label = document.getElementById('statoLabel');
+            const desc = document.getElementById('statoDesc');
+            const btn = document.getElementById('toggleBtn');
+
+            dot.className = `stato-dot ${attivo ? 'attivo' : 'disattivo'}`;
+            dot.textContent = attivo ? '✓' : '✕';
+            label.className = `stato-label ${attivo ? 'attivo' : 'disattivo'}`;
+            label.textContent = attivo ? 'Sistema Attivo' : 'Sistema Disattivato';
+            desc.textContent = attivo
+                ? 'La distribuzione codici è operativa. Gli operatori possono assegnare voucher normalmente.'
+                : 'La distribuzione codici è bloccata. Nessun voucher può essere assegnato fino alla riattivazione.';
+            btn.className = `toggle-btn ${attivo ? 'disattiva' : 'attiva'}`;
+            btn.textContent = attivo ? 'Disattiva distribuzione' : 'Riattiva distribuzione';
+            btn.disabled = false;
+        }
+
+        function buildCampagneHTML(codici) {
+            if (codici.length === 0) {
+                return '<p style="color:var(--text-muted);font-size:13px;">Nessuna campagna presente nel database.</p>';
+            }
+            const gruppi = {};
+            codici.forEach(c => {
+                const key = `${c.tipo}|${c.edizione}`;
+                if (!gruppi[key]) gruppi[key] = { tipo: c.tipo, edizione: c.edizione, campagna_attiva: c.campagna_attiva, tagli: [] };
+                gruppi[key].tagli.push(c);
+            });
+            return Object.values(gruppi).map(g => {
+                const nota = g.campagna_attiva ? '' :
+                    `<div class="campagna-disattiva-nota">⛔ Campagna disabilitata — nessun voucher può essere assegnato</div>`;
+                const taglioRows = g.tagli.map(c => `
+                    <div class="taglio-row${c.taglio_attivo ? '' : ' disattivo'}">
+                        <span class="taglio-importo">€${c.importo.toFixed(2)}</span>
+                        <span class="taglio-disponibili">${c.disponibili} disponibili</span>
+                        <button class="item-toggle ${c.taglio_attivo ? 'attivo' : 'disattivo'}"
+                            onclick="toggleTaglio('${c.tipo}', '${c.edizione}', '${c.importo.toFixed(2)}', this)">
+                            ${c.taglio_attivo ? 'Attivo' : 'Disattivo'}
+                        </button>
+                    </div>`).join('');
+                return `
+                <div class="campagna-gruppo">
+                    <div class="campagna-header${g.campagna_attiva ? '' : ' disattiva'}">
+                        <span class="campagna-nome">${g.tipo} · ${g.edizione}</span>
+                        <button class="item-toggle ${g.campagna_attiva ? 'attivo' : 'disattivo'}"
+                            onclick="toggleCampagna('${g.tipo}', '${g.edizione}', this)">
+                            ${g.campagna_attiva ? 'Campagna attiva' : 'Campagna disattiva'}
+                        </button>
+                    </div>
+                    ${nota}
+                    ${taglioRows}
+                </div>`;
+            }).join('');
+        }
+
+        async function caricaStatoSistema() {
+            document.getElementById('sistemaOutput').innerHTML = '';
+            document.getElementById('campagneOutput').innerHTML = '';
+            try {
+                const [resSistema, resCodici] = await Promise.all([
+                    fetch('/admin/stato-sistema'),
+                    fetch('/admin/stato-codici')
+                ]);
+                const dataSistema = await resSistema.json();
+                const dataCodici = await resCodici.json();
+                if (!resSistema.ok) {
+                    document.getElementById('sistemaOutput').innerHTML = `<div class="error-msg">${dataSistema.error}</div>`;
+                    return;
+                }
+                renderStatoSistema(dataSistema.attivo);
+                if (resCodici.ok) {
+                    document.getElementById('campagneGrid').innerHTML = buildCampagneHTML(dataCodici.codici);
+                }
+            } catch (err) {
+                document.getElementById('sistemaOutput').innerHTML = '<div class="error-msg">Errore di connessione. Riprova.</div>';
+            }
+        }
+
+        async function toggleCampagna(tipo, edizione, btn) {
+            btn.disabled = true;
+            try {
+                const res = await fetch('/admin/toggle-campagna', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tipo, edizione })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    document.getElementById('campagneOutput').innerHTML = `<div class="error-msg">${data.error}</div>`;
+                    return;
+                }
+                caricaStatoSistema();
+            } catch (err) {
+                document.getElementById('campagneOutput').innerHTML = '<div class="error-msg">Errore di connessione. Riprova.</div>';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function toggleTaglio(tipo, edizione, importo, btn) {
+            btn.disabled = true;
+            try {
+                const res = await fetch('/admin/toggle-taglio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tipo, edizione, importo })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    document.getElementById('campagneOutput').innerHTML = `<div class="error-msg">${data.error}</div>`;
+                    return;
+                }
+                caricaStatoSistema();
+            } catch (err) {
+                document.getElementById('campagneOutput').innerHTML = '<div class="error-msg">Errore di connessione. Riprova.</div>';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function toggleSistema() {
+            const btn = document.getElementById('toggleBtn');
+            const output = document.getElementById('sistemaOutput');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>';
+            output.innerHTML = '';
+
+            try {
+                const res = await fetch('/admin/toggle-sistema', { method: 'POST' });
+                const data = await res.json();
+                if (!res.ok) { output.innerHTML = `<div class="error-msg">${data.error}</div>`; btn.disabled = false; return; }
+                renderStatoSistema(data.attivo);
+                output.innerHTML = data.attivo
+                    ? '<div class="summary">Sistema riattivato — la distribuzione è ora operativa.</div>'
+                    : '<div class="error-msg">Sistema disattivato — nessun voucher può essere assegnato.</div>';
+            } catch (err) {
+                output.innerHTML = '<div class="error-msg">Errore di connessione. Riprova.</div>';
+                btn.disabled = false;
             }
         }
 

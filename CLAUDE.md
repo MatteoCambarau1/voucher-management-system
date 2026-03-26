@@ -52,7 +52,7 @@ CDD_YM/
 
 **`templates/index.html`** is a self-contained frontend. All CSS (via `<style>`) and JavaScript (via `<script>`) are inline in this file. There are no external static assets. The JS includes a complete i18n system (`TRANSLATIONS` object) for Italian and English.
 
-**`templates/admin.html`** is the admin panel UI. It has two tabs: **Carica Codici** (CSV file upload) and **Monitoraggio** (per-taglio availability dashboard with manual notification trigger). CSS is inline and duplicated — changes must also be applied to `index.html` and `guida.html`.
+**`templates/admin.html`** is the admin panel UI. It has three tabs: **Carica Codici** (CSV file upload), **Monitoraggio** (per-taglio availability dashboard with manual notification trigger), and **Sistema** (distribution kill switch — ON/OFF toggle backed by the `Configurazione` table). CSS is inline and duplicated — changes must also be applied to `index.html` and `guida.html`.
 
 **`templates/guida.html`** is a static informational page for operators. It shares the same visual design as `index.html` but its CSS is duplicated inline — there is no shared stylesheet. Changes to the visual design must be applied to both files manually.
 
@@ -113,7 +113,7 @@ Python dependencies are pinned exactly in `requirements.txt`. Do not add new dep
 
 ## 5. Database Schema
 
-The database is named `CDD_YM` and contains two tables.
+The database is named `CDD_YM` and contains three tables.
 
 ### `Codici` — one row per physical voucher code
 
@@ -136,6 +136,15 @@ The database is named `CDD_YM` and contains two tables.
 | `Motivazione` | `VARCHAR(64)` | One of the five valid motivation values |
 | `MotivazioneDettaglio` | `VARCHAR(512)` NULL | Free text, only present when `Motivazione = 'Altro'` |
 | `DataUtilizzo` | `DATE` | Assignment date, always set via `CURDATE()` |
+
+### `Configurazione` — key/value settings table
+
+| Column | Type | Notes |
+|---|---|---|
+| `chiave` | `VARCHAR(64)` PK | Setting key |
+| `valore` | `VARCHAR(64)` | Setting value |
+
+Currently holds one row: `distribuzione_attiva = '1'` (active) or `'0'` (disabled). Created automatically by `ensure_configurazione()` on first startup — no manual SQL needed.
 
 ### Relationship
 
@@ -303,4 +312,4 @@ The `/cerca` endpoint executes a UNION query that searches `Ordini.Ordine`, `Ord
 ---
 
 *Last updated: March 2026 — Matteo Cambarau*
-*Branch: `feature/carica-codici` — changes not yet merged to `main`*
+*Branch: `feature/disattivazione` — changes not yet merged to `main`*

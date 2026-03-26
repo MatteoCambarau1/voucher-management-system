@@ -13,6 +13,7 @@ A web application for managing and distributing Italian government voucher codes
 - **Search** — look up past assignments by order number, contact ID, or individual voucher code
 - **Bilingual UI** — the interface supports Italian and English, switchable at runtime without a page reload
 - **Copy to clipboard** — assigned codes can be copied in a single click, ready to paste into external systems
+- **Distribution kill switch** — an admin-only toggle that blocks all new assignments instantly without touching the database; re-enabling restores normal operation
 
 ---
 
@@ -109,6 +110,8 @@ DB_CONFIG = {
 python app.py
 ```
 
+> **Windows note:** if you get a `UnicodeEncodeError` on startup, run with `python -X utf8 app.py` instead.
+
 On startup the application tests the database connection and reports whether it succeeded:
 
 ```
@@ -167,16 +170,43 @@ Results show all matching orders with their associated codes, motivation, and as
 
 ---
 
+## Admin Panel
+
+Navigate to [http://localhost:8080/admin](http://localhost:8080/admin) to access the administration panel. It has three tabs.
+
+### Carica Codici
+
+Upload a CSV file to bulk-insert new voucher codes into the database. Expected columns: `CodiceID`, `Tipo`, `Importo`, `Edizione`. Re-uploading the same file is safe — duplicates are silently skipped (`INSERT IGNORE`).
+
+### Monitoraggio
+
+View the current availability of each denomination (Tipo + Edizione + Importo). Rows below the configured threshold are highlighted in red. A button to send an immediate email notification appears when one or more denominations are critical.
+
+### Sistema
+
+Emergency kill switch for the distribution system.
+
+- **Active (green)** — operators can assign voucher codes normally.
+- **Disabled (red)** — all calls to `/assegna` are rejected with a `503` error; no codes can be distributed until re-enabled.
+
+Press the button to toggle between states. The state is persisted in the database (`Configurazione` table) and survives server restarts.
+
+---
+
 ## Project Structure
 
 ```
 CDD_YM/
-├── app.py              # Flask application — routes, business logic, DB access
-├── requirements.txt    # Python package dependencies
+├── app.py                  # Flask application — routes, business logic, DB access
+├── admin.py                # Flask Blueprint — admin routes (/admin, /carica, /admin/stato-codici, etc.)
+├── notifications.py        # Email monitoring — threshold check and SMTP sending
+├── carica_codici.py        # CLI script — bulk CSV loader (alternative to web upload)
+├── requirements.txt        # Python package dependencies
 ├── .gitignore
 └── templates/
-    ├── index.html      # Main UI (Assign / Restore / Search tabs)
-    └── guida.html      # User guide page with step-by-step instructions
+    ├── index.html          # Main UI (Assign / Restore / Search tabs)
+    ├── admin.html          # Admin panel (Carica Codici / Monitoraggio / Sistema tabs)
+    └── guida.html          # User guide page with step-by-step instructions
 ```
 
 ---
@@ -212,6 +242,12 @@ Assign voucher codes to an order.
 | `contatto` | `string` | Yes | Contact identifier |
 | `motivazione` | `string` | Yes | One of: `DNR`, `Correlato al Reso`, `Articolo Errato`, `Articolo Mancante`, `Altro` |
 | `motivazione_dettaglio` | `string` | When `motivazione` is `Altro` | Free-text description |
+
+**Error response (503)** — returned when the distribution system is disabled from the admin panel:
+
+```json
+{ "error": "Sistema di distribuzione temporaneamente disattivato" }
+```
 
 **Success response (200)**
 
@@ -313,7 +349,17 @@ Ordini
 │ MotivazioneDettaglio │ VARCHAR(512) NULL                │ Free text for "Altro"         │
 │ DataUtilizzo         │ DATE                             │ Assignment date (CURDATE())   │
 └──────────────────────┴──────────────────────────────────┴──────────┘
+
+Configurazione
+┌────────────────┬───────────────┬────────────────────────────────────────────────┐
+│ Column         │ Type          │ Notes                                          │
+├────────────────┼───────────────┼────────────────────────────────────────────────┤
+│ chiave         │ VARCHAR(64) PK│ Setting key                                    │
+│ valore         │ VARCHAR(64)   │ Setting value                                  │
+└────────────────┴───────────────┴────────────────────────────────────────────────┘
 ```
+
+The `Configurazione` table is created automatically on first startup. It currently holds one row: `distribuzione_attiva = '1'` (active) or `'0'` (disabled).
 
 ---
 

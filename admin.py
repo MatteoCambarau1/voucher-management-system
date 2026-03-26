@@ -112,15 +112,154 @@ def carica_codici():
 @admin_bp.route('/admin/stato-codici')
 def stato_codici():
     """
-    Restituisce i conteggi dei codici disponibili per Tipo e Edizione.
-    Output: { "codici": [{ tipo, edizione, disponibili }], "soglia": int }
+    Restituisce i conteggi dei codici disponibili per Tipo, Edizione e Importo,
+    con lo stato attivo/disabilitato per campagna e taglio.
+    Output: { "codici": [{ tipo, edizione, importo, disponibili, campagna_attiva, taglio_attivo }], "soglia": int }
     """
     try:
         conteggi = get_conteggio_codici()
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT chiave, valore FROM Configurazione WHERE chiave LIKE 'disabilitato_%'"
+        )
+        stati = {row[0]: row[1] for row in cursor.fetchall()}
+        cursor.close()
+        conn.close()
+
+        for c in conteggi:
+            chiave_campagna = f"disabilitato_{c['tipo']}_{c['edizione']}"
+            chiave_taglio = f"disabilitato_{c['tipo']}_{c['edizione']}_{c['importo']:.2f}"
+            c['campagna_attiva'] = stati.get(chiave_campagna) != '1'
+            c['taglio_attivo'] = stati.get(chiave_taglio) != '1'
+
         return jsonify({'codici': conteggi, 'soglia': SOGLIA})
     except Exception as e:
         print(f'Errore monitoraggio: {e}')
         return jsonify({'error': 'Errore nel recupero dei dati'}), 500
+
+
+@admin_bp.route('/admin/toggle-campagna', methods=['POST'])
+def toggle_campagna():
+    """
+    Abilita/disabilita una campagna (Tipo + Edizione).
+    Input: { "tipo": "CDD", "edizione": "2025" }
+    Output: { "attivo": bool }
+    """
+    try:
+        data = request.get_json()
+        tipo = data.get('tipo', '').upper().strip()
+        edizione = data.get('edizione', '').strip()
+
+        if tipo not in ('CDD', 'YM') or edizione not in ('2024', '2025'):
+            return jsonify({'error': 'Parametri non validi'}), 400
+
+        chiave = f'disabilitato_{tipo}_{edizione}'
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT valore FROM Configurazione WHERE chiave = %s", (chiave,))
+        row = cursor.fetchone()
+        nuovo_valore = '0' if (row and row[0] == '1') else '1'
+        cursor.execute(
+            "INSERT INTO Configurazione (chiave, valore) VALUES (%s, %s) "
+            "ON DUPLICATE KEY UPDATE valore = %s",
+            (chiave, nuovo_valore, nuovo_valore)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'attivo': nuovo_valore != '1'})
+    except Exception as e:
+        print(f'Errore toggle campagna: {e}')
+        return jsonify({'error': 'Errore interno del server'}), 500
+
+
+@admin_bp.route('/admin/toggle-taglio', methods=['POST'])
+def toggle_taglio():
+    """
+    Abilita/disabilita un taglio specifico (Tipo + Edizione + Importo).
+    Input: { "tipo": "CDD", "edizione": "2025", "importo": "25.00" }
+    Output: { "attivo": bool }
+    """
+    try:
+        data = request.get_json()
+        tipo = data.get('tipo', '').upper().strip()
+        edizione = data.get('edizione', '').strip()
+        importo_str = data.get('importo', '').strip()
+
+        if tipo not in ('CDD', 'YM') or edizione not in ('2024', '2025'):
+            return jsonify({'error': 'Parametri non validi'}), 400
+
+        try:
+            importo_dec = Decimal(importo_str)
+            if importo_dec <= 0:
+                raise ValueError
+        except (InvalidOperation, ValueError):
+            return jsonify({'error': 'Importo non valido'}), 400
+
+        chiave = f'disabilitato_{tipo}_{edizione}_{float(importo_dec):.2f}'
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT valore FROM Configurazione WHERE chiave = %s", (chiave,))
+        row = cursor.fetchone()
+        nuovo_valore = '0' if (row and row[0] == '1') else '1'
+        cursor.execute(
+            "INSERT INTO Configurazione (chiave, valore) VALUES (%s, %s) "
+            "ON DUPLICATE KEY UPDATE valore = %s",
+            (chiave, nuovo_valore, nuovo_valore)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'attivo': nuovo_valore != '1'})
+    except Exception as e:
+        print(f'Errore toggle taglio: {e}')
+        return jsonify({'error': 'Errore interno del server'}), 500
+
+
+@admin_bp.route('/admin/stato-sistema')
+def stato_sistema():
+    """
+    Restituisce lo stato attuale della distribuzione.
+    Output: { "attivo": bool }
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT valore FROM Configurazione WHERE chiave = 'distribuzione_attiva'")
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return jsonify({'attivo': row is not None and row[0] == '1'})
+    except Exception as e:
+        print(f'Errore stato sistema: {e}')
+        return jsonify({'error': 'Errore interno del server'}), 500
+
+
+@admin_bp.route('/admin/toggle-sistema', methods=['POST'])
+def toggle_sistema():
+    """
+    Inverte lo stato della distribuzione (attivo ↔ disattivato).
+    Output: { "attivo": bool }
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT valore FROM Configurazione WHERE chiave = 'distribuzione_attiva'")
+        row = cursor.fetchone()
+        nuovo_valore = '0' if (row and row[0] == '1') else '1'
+        cursor.execute(
+            "UPDATE Configurazione SET valore = %s WHERE chiave = 'distribuzione_attiva'",
+            (nuovo_valore,)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'attivo': nuovo_valore == '1'})
+    except Exception as e:
+        print(f'Errore toggle sistema: {e}')
+        return jsonify({'error': 'Errore interno del server'}), 500
 
 
 @admin_bp.route('/admin/invia-notifica', methods=['POST'])
