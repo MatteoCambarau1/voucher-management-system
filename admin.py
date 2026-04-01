@@ -54,7 +54,7 @@ def carica_codici():
 
         for i, riga in enumerate(reader, start=2):
             codice   = riga.get('CodiceID', '').strip()
-            tipo     = riga.get('Tipo', '').strip().upper()
+            tipo     = riga.get('Tipo', '').strip()
             importo  = riga.get('Importo', '').strip()
             edizione = riga.get('Edizione', '').strip()
 
@@ -64,8 +64,11 @@ def carica_codici():
             if len(codice) > 64:
                 errori.append(f'Riga {i}: CodiceID troppo lungo ({len(codice)} caratteri)')
                 continue
-            if tipo not in ('CDD', 'YM'):
-                errori.append(f'Riga {i}: Tipo "{tipo}" non valido (usa CDD o YM)')
+            if not tipo:
+                errori.append(f'Riga {i}: Tipo mancante')
+                continue
+            if len(tipo) > 32:
+                errori.append(f'Riga {i}: Tipo "{tipo}" troppo lungo (max 32 caratteri)')
                 continue
             if not edizione:
                 errori.append(f'Riga {i}: Edizione mancante')
@@ -154,10 +157,10 @@ def toggle_campagna():
     """
     try:
         data = request.get_json()
-        tipo = data.get('tipo', '').upper().strip()
+        tipo = data.get('tipo', '').strip()
         edizione = data.get('edizione', '').strip()
 
-        if tipo not in ('CDD', 'YM') or not edizione:
+        if not tipo or not edizione:
             return jsonify({'error': 'Parametri non validi'}), 400
 
         chiave = f'disabilitato_{tipo}_{edizione}'
@@ -189,11 +192,11 @@ def toggle_taglio():
     """
     try:
         data = request.get_json()
-        tipo = data.get('tipo', '').upper().strip()
+        tipo = data.get('tipo', '').strip()
         edizione = data.get('edizione', '').strip()
         importo_str = data.get('importo', '').strip()
 
-        if tipo not in ('CDD', 'YM') or not edizione:
+        if not tipo or not edizione:
             return jsonify({'error': 'Parametri non validi'}), 400
 
         try:

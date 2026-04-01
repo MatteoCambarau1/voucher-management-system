@@ -305,15 +305,8 @@
                 <form id="voucherForm">
                     <div class="field">
                         <label data-i18n="labelTipo">Tipo Voucher</label>
-                        <div class="toggle-group">
-                            <button type="button" class="toggle-btn active" data-value="CDD" onclick="selectTipo(this)">
-                                <span class="label-main">CDD</span>
-                                <span class="label-sub" data-i18n="subCDD">Carta del Docente</span>
-                            </button>
-                            <button type="button" class="toggle-btn" data-value="YM" onclick="selectTipo(this)">
-                                <span class="label-main">YM</span>
-                                <span class="label-sub" data-i18n="subYM">Giovani Merito</span>
-                            </button>
+                        <div class="toggle-group" id="tipoGroup">
+                            <!-- popolato dinamicamente da /campagne-attive -->
                         </div>
                     </div>
 
@@ -407,8 +400,6 @@
                 labelTipo: 'Tipo Voucher',
                 labelEdizione: 'Edizione',
                 labelImporto: 'Importo Richiesto',
-                subCDD: 'Carta del Docente',
-                subYM: 'Giovani Merito',
                 labelOrdine: 'Ordine ID',
                 placeholderOrdine: '404-...',
                 labelContatto: 'Contatto ID',
@@ -464,8 +455,6 @@
                 labelTipo: 'Voucher Type',
                 labelEdizione: 'Edition',
                 labelImporto: 'Requested Amount',
-                subCDD: "Teacher's Card",
-                subYM: 'Young Merit',
                 labelOrdine: 'Order ID',
                 placeholderOrdine: '404-...',
                 labelContatto: 'Contact ID',
@@ -515,8 +504,9 @@
         };
 
         let lang = 'it';
-        let tipo = 'CDD';
+        let tipo = '';
         let edizione = '';
+        let tipiCampagne = {};
 
         function t(key) { return TRANSLATIONS[lang][key]; }
 
@@ -555,9 +545,10 @@
         }
 
         function selectTipo(btn) {
-            document.querySelectorAll('#panelAssegna .field:nth-child(1) .toggle-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#tipoGroup .toggle-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             tipo = btn.dataset.value;
+            aggiornaEdizioni(tipiCampagne[tipo] || []);
         }
         function selectEdizione(btn) {
             document.querySelectorAll('#edizioneGroup .toggle-btn').forEach(b => b.classList.remove('active'));
@@ -565,24 +556,46 @@
             edizione = btn.dataset.value;
         }
 
-        async function caricaEdizioni() {
+        function aggiornaEdizioni(edizioni) {
             const group = document.getElementById('edizioneGroup');
+            if (!edizioni || edizioni.length === 0) {
+                group.innerHTML = '<span style="color:var(--text-muted);font-size:13px;padding:10px 0;display:inline-block;">Nessuna edizione disponibile</span>';
+                edizione = '';
+                return;
+            }
+            group.innerHTML = edizioni.map((e, i) =>
+                `<button type="button" class="toggle-btn${i === 0 ? ' active' : ''}" data-value="${e}" onclick="selectEdizione(this)">
+                    <span class="label-main">${e}</span>
+                </button>`
+            ).join('');
+            edizione = edizioni[0];
+        }
+
+        async function caricaCampagne() {
+            const tipoGroup = document.getElementById('tipoGroup');
+            const edizioneGroup = document.getElementById('edizioneGroup');
             try {
                 const res = await fetch('/campagne-attive');
                 const data = await res.json();
-                if (!data.edizioni || data.edizioni.length === 0) {
-                    group.innerHTML = '<span style="color:var(--text-muted);font-size:13px;padding:10px 0;display:inline-block;">Nessuna edizione disponibile</span>';
+                if (!data.campagne || data.campagne.length === 0) {
+                    tipoGroup.innerHTML = '<span style="color:var(--text-muted);font-size:13px;padding:10px 0;display:inline-block;">Nessun tipo disponibile</span>';
+                    edizioneGroup.innerHTML = '';
+                    tipo = '';
                     edizione = '';
                     return;
                 }
-                group.innerHTML = data.edizioni.map((e, i) =>
-                    `<button type="button" class="toggle-btn${i === 0 ? ' active' : ''}" data-value="${e}" onclick="selectEdizione(this)">
-                        <span class="label-main">${e}</span>
+                tipiCampagne = {};
+                data.campagne.forEach(c => { tipiCampagne[c.tipo] = c.edizioni; });
+
+                tipoGroup.innerHTML = data.campagne.map((c, i) =>
+                    `<button type="button" class="toggle-btn${i === 0 ? ' active' : ''}" data-value="${c.tipo}" onclick="selectTipo(this)">
+                        <span class="label-main">${c.tipo}</span>
                     </button>`
                 ).join('');
-                edizione = data.edizioni[0];
+                tipo = data.campagne[0].tipo;
+                aggiornaEdizioni(data.campagne[0].edizioni);
             } catch (err) {
-                group.innerHTML = '<span style="color:var(--error);font-size:13px;padding:10px 0;display:inline-block;">Errore caricamento edizioni</span>';
+                tipoGroup.innerHTML = '<span style="color:var(--error);font-size:13px;padding:10px 0;display:inline-block;">Errore caricamento campagne</span>';
             }
         }
 
@@ -844,8 +857,8 @@
             document.getElementById('codiciInput').focus();
         }
 
-        // Carica le edizioni disponibili al caricamento della pagina
-        caricaEdizioni();
+        // Carica tipi e edizioni disponibili al caricamento della pagina
+        caricaCampagne();
     </script>
 </body>
 </html>

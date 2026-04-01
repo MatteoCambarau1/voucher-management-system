@@ -8,11 +8,7 @@ This file provides context and guidance for working on the CDD_YM codebase. Read
 
 **CDD_YM** is a proof-of-concept web application built to demonstrate a system for distributing Italian government voucher codes to beneficiaries. It was developed to present an idea to a company, which will be responsible for making the application secure and production-ready.
 
-The system manages two voucher types:
-- **CDD** — Carta del Docente (Teacher's Card)
-- **YM** — Giovani Merito (Young Merit)
-
-Each voucher type is issued in annual editions (currently 2024 and 2025). The application automates code selection, persists every assignment to a MySQL database, and provides restore and search capabilities through a browser-based interface.
+The system manages voucher types and editions **fully dynamically** — any `Tipo` value loaded into the database via CSV is automatically supported without code changes (e.g. `CDD`, `YM`, `CartaCultura`, `18app`, or any future type). The same applies to editions. The application automates code selection, persists every assignment to a MySQL database, and provides restore and search capabilities through a browser-based interface.
 
 **This is not a production system.** Security hardening, scalability, and infrastructure concerns are intentionally out of scope and will be addressed by the receiving company.
 
@@ -121,9 +117,9 @@ The database is named `CDD_YM` and contains three tables.
 | Column | Type | Notes |
 |---|---|---|
 | `CodiceID` | `VARCHAR(64)` PK | The voucher code string (e.g. `AB12-CD34-EF56`) |
-| `Tipo` | `ENUM('CDD', 'YM')` | Voucher programme |
+| `Tipo` | `VARCHAR(32)` | Voucher programme — any non-empty string (e.g. `CDD`, `YM`, `CartaCultura`, `18app`) |
 | `Importo` | `DECIMAL(10,2)` | Face value in euros — always use DECIMAL, never FLOAT |
-| `Edizione` | `VARCHAR(4)` | Year string: `'2024'`, `'2025'` |
+| `Edizione` | `VARCHAR(4)` | Edition identifier — any non-empty string (e.g. `'2024'`, `'2025'`, `'2026'`) |
 | `StatoCodice` | `ENUM('Disponibile', 'Usato')` | Current availability status |
 | `IdentificativoOrdine` | `INT NULL` | FK to `Ordini.IdentificativoOrdine`; NULL when available |
 
@@ -184,7 +180,7 @@ Campaign and taglio keys are created on first toggle and removed automatically w
 
 **DOM building**: results are rendered by constructing HTML strings in `buildResultsHTML`, `buildAnnullaResultHTML`, and `buildCercaResultHTML`. New output sections should follow the same pattern: return an HTML string, assign it to `outputDiv.innerHTML`.
 
-**Global state**: `lang`, `tipo`, and `edizione` are module-level `let` variables tracking current UI state. They are updated by `setLang`, `selectTipo`, and `selectEdizione`. Do not read their values from the DOM — always use these variables.
+**Global state**: `lang`, `tipo`, `edizione`, and `tipiCampagne` are module-level `let` variables tracking current UI state. `tipiCampagne` is a map of `tipo → [edizioni]` populated at page load from `/campagne-attive`. They are updated by `setLang`, `selectTipo`, and `selectEdizione`. Do not read their values from the DOM — always use these variables.
 
 **Async pattern**: all three forms use the same `async/await` pattern with `fetch`. The button is disabled during the request and re-enabled in `finally`. Follow this pattern for any new form submissions.
 
@@ -210,11 +206,11 @@ Each route opens and closes its own connection manually. Connections are closed 
 
 The startup block in `__main__` opens a test connection to verify connectivity. It is separate from the request lifecycle and does not affect runtime behaviour.
 
-### Editions are dynamic — not hardcoded
+### Types and editions are dynamic — not hardcoded
 
-Editions (e.g. `'2024'`, `'2025'`, `'2026'`) are **no longer hardcoded** anywhere in the codebase. The source of truth is the `Codici` table in the database. To add or remove an edition, load or delete codes via the admin panel — no code changes needed.
+Both voucher types (e.g. `CDD`, `YM`, `CartaCultura`, `18app`) and editions (e.g. `'2024'`, `'2025'`, `'2026'`) are **fully dynamic**. The source of truth is the `Codici` table in the database. To add a new type or edition, simply upload a CSV with the new values via the admin panel — no code changes needed.
 
-The endpoint `GET /campagne-attive` (`app.py`) returns the distinct editions that currently have `Disponibile` codes. `index.html` calls this on page load and builds the edition buttons dynamically. If an edition has no available codes, its button does not appear.
+The endpoint `GET /campagne-attive` (`app.py`) returns all `(Tipo, Edizione)` pairs that currently have `Disponibile` codes, grouped by tipo. `index.html` calls this on page load via `caricaCampagne()`, builds the tipo buttons dynamically, and updates the edizione buttons whenever the selected tipo changes via `aggiornaEdizioni()`. If a tipo or edition has no available codes, its button does not appear.
 
 `MOTIVAZIONI_VALIDE` (line 15 of `app.py`) is still hardcoded. Adding a new motivation requires updating both `app.py` and the `<select>` in `index.html`.
 
@@ -252,10 +248,7 @@ After every successful code assignment, `/assegna` calls `controlla_e_notifica()
 
 ### Adding a new voucher type
 
-1. Update the `Tipo` ENUM in MySQL: `ALTER TABLE Codici MODIFY Tipo ENUM('CDD', 'YM', 'NEW_TYPE')`.
-2. Add `'NEW_TYPE'` to the validation list in `/assegna` (`if tipo not in ['CDD', 'YM']`).
-3. Add a new toggle button in the Tipo field group in `index.html`.
-4. Add the label and sublabel strings to both translation objects.
+No code changes required. Simply upload a CSV containing codes with the new `Tipo` value (e.g. `CartaCultura`, `18app`, or any custom string up to 32 characters) via `/admin` → tab "Carica Codici". The backend accepts any non-empty tipo. The frontend will display the new tipo button automatically on the next page load.
 
 ### Adding a new edition year
 
@@ -323,3 +316,17 @@ The `/cerca` endpoint executes a UNION query that searches `Ordini.Ordine`, `Ord
 ---
 
 *Last updated: April 2026 — Matteo Cambarau*
+
+---
+
+## 10. Migration Notes
+
+### Branch `differenziazioneCampagna` — April 2026
+
+The `Tipo` column was changed from `ENUM('CDD', 'YM')` to `VARCHAR(32)` to support fully dynamic voucher types. Run the following SQL once on any existing database before deploying:
+
+```sql
+ALTER TABLE Codici MODIFY Tipo VARCHAR(32) NOT NULL;
+```
+
+All hardcoded type validations (`if tipo not in ('CDD', 'YM')`) were removed from `app.py`, `admin.py`, and `carica_codici.py`. The `/campagne-attive` endpoint now returns `{ "campagne": [{"tipo": ..., "edizioni": [...]}] }` instead of `{ "edizioni": [...] }`. The frontend function `caricaEdizioni()` was replaced by `caricaCampagne()` + `aggiornaEdizioni()`.

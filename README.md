@@ -7,7 +7,7 @@ A web application for managing and distributing Italian government voucher codes
 ## Key Features
 
 - **Automated code selection** — given a requested amount, the system applies a greedy algorithm to pick the optimal combination of available voucher codes, rounding up to the nearest €0.50 increment when an exact match is unavailable
-- **Dual voucher type support** — handles both CDD (Carta del Docente) and YM (Giovani Merito) vouchers across multiple annual editions (2024, 2025)
+- **Fully dynamic voucher types and editions** — the system supports any combination of voucher type and edition without code changes; loading a CSV with a new `Tipo` (e.g. `CartaCultura`, `18app`) automatically makes it selectable in the UI
 - **Order tracking** — every assignment is persisted to a MySQL database with the associated order ID, contact ID, motivation, and date
 - **Code restore** — previously assigned codes can be reverted to "Available" status, detaching them from their order record
 - **Search** — look up past assignments by order number, contact ID, or individual voucher code
@@ -73,7 +73,7 @@ USE CDD_YM;
 
 CREATE TABLE Codici (
     CodiceID        VARCHAR(64)  NOT NULL PRIMARY KEY,
-    Tipo            ENUM('CDD', 'YM') NOT NULL,
+    Tipo            VARCHAR(32)  NOT NULL,
     Importo         DECIMAL(10, 2) NOT NULL,
     Edizione        VARCHAR(4)   NOT NULL,
     StatoCodice     ENUM('Disponibile', 'Usato') NOT NULL DEFAULT 'Disponibile',
@@ -137,8 +137,8 @@ The interface is organised into three tabs.
 
 Use this tab to distribute voucher codes to a beneficiary.
 
-1. Select the **voucher type**: CDD (Carta del Docente) or YM (Giovani Merito).
-2. Select the **edition**: 2024 or 2025.
+1. Select the **voucher type** from the available buttons — populated dynamically from the database (e.g. CDD, YM, CartaCultura, 18app).
+2. Select the **edition** — updates automatically to show only editions available for the selected type.
 3. Enter the **requested amount** in euros (e.g. `47.30`).
 4. Enter the **Order ID** and **Contact ID** from your order management system.
 5. Choose a **motivation** from the dropdown. If you select "Altro" (Other), an additional text field appears to describe the reason.
@@ -261,8 +261,8 @@ Assign voucher codes to an order.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `tipo` | `string` | Yes | Voucher type: `CDD` or `YM` |
-| `edizione` | `string` | Yes | Edition year: `2024` or `2025` |
+| `tipo` | `string` | Yes | Voucher type — any non-empty string matching a type present in the database (e.g. `CDD`, `YM`, `CartaCultura`, `18app`) |
+| `edizione` | `string` | Yes | Edition — any non-empty string matching an edition present in the database (e.g. `2024`, `2025`, `2026`) |
 | `importo` | `number` | Yes | Requested amount in euros (must be > 0) |
 | `ordine` | `string` | Yes | Order identifier |
 | `contatto` | `string` | Yes | Contact identifier |
@@ -413,12 +413,18 @@ Download an Excel file with aggregated counts per Tipo + Edizione + Importo.
 
 ### GET /campagne-attive
 
-Returns the list of editions that currently have at least one `Disponibile` code. Used by the frontend to build edition buttons dynamically.
+Returns all voucher types and their available editions, grouped by type. Used by the frontend to build the type and edition selectors dynamically. Only types/editions with at least one `Disponibile` code are returned.
 
 **Success response (200)**
 
 ```json
-{ "edizioni": ["2024", "2025"] }
+{
+  "campagne": [
+    { "tipo": "CDD", "edizioni": ["2024", "2025", "2026"] },
+    { "tipo": "CartaCultura", "edizioni": ["2026"] },
+    { "tipo": "YM", "edizioni": ["2024", "2025"] }
+  ]
+}
 ```
 
 ---
@@ -431,9 +437,9 @@ Codici
 │ Column               │ Type                             │ Notes    │
 ├──────────────────────┼──────────────────────────────────┼──────────┤
 │ CodiceID             │ VARCHAR(64) PK                   │ Voucher code string │
-│ Tipo                 │ ENUM('CDD','YM')                 │ Voucher programme   │
+│ Tipo                 │ VARCHAR(32)                      │ Voucher programme   │
 │ Importo              │ DECIMAL(10,2)                    │ Face value in euros │
-│ Edizione             │ VARCHAR(4)                       │ Year (2024, 2025)   │
+│ Edizione             │ VARCHAR(4)                       │ Year or edition identifier (e.g. 2024, 2025, 2026) │
 │ StatoCodice          │ ENUM('Disponibile','Usato')      │ Current status      │
 │ IdentificativoOrdine │ INT NULL                         │ FK → Ordini         │
 └──────────────────────┴──────────────────────────────────┴──────────┘
@@ -459,7 +465,12 @@ Configurazione
 └────────────────┴───────────────┴────────────────────────────────────────────────┘
 ```
 
-The `Configurazione` table is created automatically on first startup. It currently holds one row: `distribuzione_attiva = '1'` (active) or `'0'` (disabled).
+The `Configurazione` table is created automatically on first startup. It holds:
+- `distribuzione_attiva` — `'1'` (active) or `'0'` (disabled); the global kill switch
+- `disabilitato_{Tipo}_{Edizione}` — `'1'` when a campaign is disabled (e.g. `disabilitato_CDD_2025`)
+- `disabilitato_{Tipo}_{Edizione}_{importo}` — `'1'` when a single denomination is disabled (e.g. `disabilitato_CDD_2025_25.00`)
+
+Campaign and denomination keys are created on first toggle and removed automatically when a campaign is deleted.
 
 ---
 

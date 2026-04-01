@@ -7,13 +7,13 @@ Utilizzo:
 Formato CSV atteso (con intestazione):
     CodiceID,Tipo,Importo,Edizione
     AB12-CD34-EF56,CDD,25.00,2025
-    GH78-IJ90-KL12,YM,50.00,2025
+    GH78-IJ90-KL12,CartaCultura,50.00,2026
 
 Colonne:
     CodiceID  — codice voucher (stringa, max 64 caratteri)
-    Tipo      — CDD oppure YM
+    Tipo      — qualsiasi stringa non vuota (es. CDD, YM, CartaCultura, 18app)
     Importo   — valore in euro (es. 25.00)
-    Edizione  — anno (es. 2024, 2025)
+    Edizione  — anno o altro identificativo (es. 2024, 2025, 2026)
 
 Note:
     - I duplicati vengono ignorati (INSERT IGNORE).
@@ -34,14 +34,10 @@ DB_CONFIG = {
     'database': 'CDD_YM'
 }
 
-TIPI_VALIDI     = {'CDD', 'YM'}
-EDIZIONI_VALIDE = {'2024', '2025'}
-
-
 def valida_riga(riga, numero):
     """Valida una riga del CSV. Restituisce (dati, errore)."""
     codice   = riga.get('CodiceID', '').strip()
-    tipo     = riga.get('Tipo', '').strip().upper()
+    tipo     = riga.get('Tipo', '').strip()
     importo  = riga.get('Importo', '').strip()
     edizione = riga.get('Edizione', '').strip()
 
@@ -49,10 +45,12 @@ def valida_riga(riga, numero):
         return None, f"riga {numero}: CodiceID mancante"
     if len(codice) > 64:
         return None, f"riga {numero}: CodiceID troppo lungo ({len(codice)} caratteri)"
-    if tipo not in TIPI_VALIDI:
-        return None, f"riga {numero}: Tipo '{tipo}' non valido (usa CDD o YM)"
-    if edizione not in EDIZIONI_VALIDE:
-        return None, f"riga {numero}: Edizione '{edizione}' non valida (usa {sorted(EDIZIONI_VALIDE)})"
+    if not tipo:
+        return None, f"riga {numero}: Tipo mancante"
+    if len(tipo) > 32:
+        return None, f"riga {numero}: Tipo '{tipo}' troppo lungo (max 32 caratteri)"
+    if not edizione:
+        return None, f"riga {numero}: Edizione mancante"
     try:
         importo_dec = Decimal(importo)
         if importo_dec <= 0:

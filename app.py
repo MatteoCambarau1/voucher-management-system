@@ -156,20 +156,25 @@ def marca_codici_usati(conn, cursor, codici_selezionati, identificativo_ordine):
 @app.route('/campagne-attive')
 def campagne_attive():
     """
-    Restituisce le edizioni che hanno almeno un codice Disponibile.
-    Usato dal frontend per popolare dinamicamente i bottoni di selezione edizione.
-    Output: { "edizioni": ["2024", "2025", ...] }
+    Restituisce i tipi e le edizioni che hanno almeno un codice Disponibile, raggruppati per tipo.
+    Usato dal frontend per popolare dinamicamente i selettori di tipo ed edizione.
+    Output: { "campagne": [{"tipo": "CDD", "edizioni": ["2024", "2025"]}, ...] }
     """
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT DISTINCT Edizione FROM Codici WHERE StatoCodice = 'Disponibile' ORDER BY Edizione"
+            "SELECT DISTINCT Tipo, Edizione FROM Codici WHERE StatoCodice = 'Disponibile' ORDER BY Tipo, Edizione"
         )
-        edizioni = [r[0] for r in cursor.fetchall()]
+        rows = cursor.fetchall()
         cursor.close()
         conn.close()
-        return jsonify({'edizioni': edizioni})
+        campagne = {}
+        for tipo_r, edizione_r in rows:
+            if tipo_r not in campagne:
+                campagne[tipo_r] = []
+            campagne[tipo_r].append(edizione_r)
+        return jsonify({'campagne': [{'tipo': t, 'edizioni': e} for t, e in campagne.items()]})
     except Exception as e:
         print(f'Errore campagne-attive: {e}')
         return jsonify({'error': 'Errore interno del server'}), 500
@@ -195,7 +200,7 @@ def assegna_codici():
     try:
         data = request.get_json()
 
-        tipo       = data.get('tipo', '').upper().strip()
+        tipo       = data.get('tipo', '').strip()
         edizione   = data.get('edizione', '').strip()
         importo    = float(data.get('importo', 0))
         ordine     = data.get('ordine', '').strip()
@@ -204,8 +209,8 @@ def assegna_codici():
         motivazione_dettaglio = data.get('motivazione_dettaglio', '').strip()
 
         # Validazione
-        if tipo not in ['CDD', 'YM']:
-            return jsonify({'error': 'Tipo voucher non valido'}), 400
+        if not tipo:
+            return jsonify({'error': 'Tipo voucher non specificato'}), 400
         if not edizione:
             return jsonify({'error': 'Edizione non specificata'}), 400
         if importo <= 0:
