@@ -52,7 +52,7 @@ CDD_YM/
 
 **`templates/index.html`** is a self-contained frontend. All CSS (via `<style>`) and JavaScript (via `<script>`) are inline in this file. There are no external static assets. The JS includes a complete i18n system (`TRANSLATIONS` object) for Italian and English.
 
-**`templates/admin.html`** is the admin panel UI. It has three tabs: **Carica Codici** (CSV file upload), **Monitoraggio** (per-taglio availability dashboard with manual notification trigger), and **Sistema** (distribution kill switch — ON/OFF toggle backed by the `Configurazione` table). CSS is inline and duplicated — changes must also be applied to `index.html` and `guida.html`.
+**`templates/admin.html`** is the admin panel UI. It has four tabs: **Carica Codici** (CSV file upload), **Campagne** (per-campaign management — view counts, delete available codes), **Monitoraggio** (per-taglio availability dashboard with manual notification trigger), and **Sistema** (distribution kill switch — ON/OFF toggle backed by the `Configurazione` table). CSS is inline and duplicated — changes must also be applied to `index.html` and `guida.html`.
 
 **`templates/guida.html`** is a static informational page for operators. It shares the same visual design as `index.html` but its CSS is duplicated inline — there is no shared stylesheet. Changes to the visual design must be applied to both files manually.
 
@@ -204,9 +204,13 @@ Each route opens and closes its own connection manually. Connections are closed 
 
 The startup block in `__main__` opens a test connection to verify connectivity. It is separate from the request lifecycle and does not affect runtime behaviour.
 
-### Hardcoded editions and motivation values
+### Editions are dynamic — not hardcoded
 
-`['2024', '2025']` (edition validation, line 124) and `MOTIVAZIONI_VALIDE` (line 15) are the two places where domain values are hardcoded. Adding a new edition year or motivation requires updating both `app.py` (backend validation) and `index.html` (frontend dropdowns and translations). There is no single source of truth for these values.
+Editions (e.g. `'2024'`, `'2025'`, `'2026'`) are **no longer hardcoded** anywhere in the codebase. The source of truth is the `Codici` table in the database. To add or remove an edition, load or delete codes via the admin panel — no code changes needed.
+
+The endpoint `GET /campagne-attive` (`app.py`) returns the distinct editions that currently have `Disponibile` codes. `index.html` calls this on page load and builds the edition buttons dynamically. If an edition has no available codes, its button does not appear.
+
+`MOTIVAZIONI_VALIDE` (line 15 of `app.py`) is still hardcoded. Adding a new motivation requires updating both `app.py` and the `<select>` in `index.html`.
 
 ### DB_CONFIG duplication
 
@@ -249,10 +253,11 @@ After every successful code assignment, `/assegna` calls `controlla_e_notifica()
 
 ### Adding a new edition year
 
-1. Add the year string to the validation list in `/assegna` (`if edizione not in ['2024', '2025']`) in `app.py`.
-2. Add the year string to the validation list in `carica_codici` in `admin.py` and in `carica_codici.py`.
-3. Add a toggle button for the new year in the Edizione field group in `index.html`.
-4. Populate the `Codici` table with codes for the new edition (via the admin upload UI or `carica_codici.py`).
+No code changes required. Simply upload a CSV containing codes with the new edition string (e.g. `2026`) via `/admin` → tab "Carica Codici". The backend accepts any non-empty edition value. The frontend will display the new edition button automatically on the next page load.
+
+### Removing an edition (campaign)
+
+Go to `/admin` → tab "Campagne". Each campaign (Tipo + Edizione) is shown with its available/used counts. Click "Elimina" and confirm. This deletes all `Disponibile` codes for that campaign and cleans up the related `Configurazione` keys. Codes already assigned (`Usato`) are preserved. The edition button disappears from the main UI automatically once no available codes remain.
 
 ### Loading codes from CSV
 
@@ -312,4 +317,4 @@ The `/cerca` endpoint executes a UNION query that searches `Ordini.Ordine`, `Ord
 ---
 
 *Last updated: March 2026 — Matteo Cambarau*
-*Branch: `feature/disattivazione` — changes not yet merged to `main`*
+*Branch: `feature/caricamentoCodiciGaranzia` — changes not yet merged to `main`*

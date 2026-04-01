@@ -319,13 +319,8 @@
 
                     <div class="field">
                         <label data-i18n="labelEdizione">Edizione</label>
-                        <div class="toggle-group">
-                            <button type="button" class="toggle-btn active" data-value="2024" onclick="selectEdizione(this)">
-                                <span class="label-main">2024</span>
-                            </button>
-                            <button type="button" class="toggle-btn" data-value="2025" onclick="selectEdizione(this)">
-                                <span class="label-main">2025</span>
-                            </button>
+                        <div class="toggle-group" id="edizioneGroup">
+                            <!-- popolato dinamicamente da /campagne-attive -->
                         </div>
                     </div>
 
@@ -521,7 +516,7 @@
 
         let lang = 'it';
         let tipo = 'CDD';
-        let edizione = '2024';
+        let edizione = '';
 
         function t(key) { return TRANSLATIONS[lang][key]; }
 
@@ -565,9 +560,30 @@
             tipo = btn.dataset.value;
         }
         function selectEdizione(btn) {
-            document.querySelectorAll('#panelAssegna .field:nth-child(2) .toggle-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#edizioneGroup .toggle-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             edizione = btn.dataset.value;
+        }
+
+        async function caricaEdizioni() {
+            const group = document.getElementById('edizioneGroup');
+            try {
+                const res = await fetch('/campagne-attive');
+                const data = await res.json();
+                if (!data.edizioni || data.edizioni.length === 0) {
+                    group.innerHTML = '<span style="color:var(--text-muted);font-size:13px;padding:10px 0;display:inline-block;">Nessuna edizione disponibile</span>';
+                    edizione = '';
+                    return;
+                }
+                group.innerHTML = data.edizioni.map((e, i) =>
+                    `<button type="button" class="toggle-btn${i === 0 ? ' active' : ''}" data-value="${e}" onclick="selectEdizione(this)">
+                        <span class="label-main">${e}</span>
+                    </button>`
+                ).join('');
+                edizione = data.edizioni[0];
+            } catch (err) {
+                group.innerHTML = '<span style="color:var(--error);font-size:13px;padding:10px 0;display:inline-block;">Errore caricamento edizioni</span>';
+            }
         }
 
         function onMotivazioneChange() {
@@ -827,6 +843,9 @@
             document.getElementById('outputAnnulla').innerHTML = '';
             document.getElementById('codiciInput').focus();
         }
+
+        // Carica le edizioni disponibili al caricamento della pagina
+        caricaEdizioni();
     </script>
 </body>
 </html>

@@ -151,6 +151,28 @@ def marca_codici_usati(conn, cursor, codici_selezionati, identificativo_ordine):
         dati
     )
 
+@app.route('/campagne-attive')
+def campagne_attive():
+    """
+    Restituisce le edizioni che hanno almeno un codice Disponibile.
+    Usato dal frontend per popolare dinamicamente i bottoni di selezione edizione.
+    Output: { "edizioni": ["2024", "2025", ...] }
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT DISTINCT Edizione FROM Codici WHERE StatoCodice = 'Disponibile' ORDER BY Edizione"
+        )
+        edizioni = [r[0] for r in cursor.fetchall()]
+        cursor.close()
+        conn.close()
+        return jsonify({'edizioni': edizioni})
+    except Exception as e:
+        print(f'Errore campagne-attive: {e}')
+        return jsonify({'error': 'Errore interno del server'}), 500
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -182,8 +204,8 @@ def assegna_codici():
         # Validazione
         if tipo not in ['CDD', 'YM']:
             return jsonify({'error': 'Tipo voucher non valido'}), 400
-        if edizione not in ['2024', '2025']:
-            return jsonify({'error': 'Edizione non valida'}), 400
+        if not edizione:
+            return jsonify({'error': 'Edizione non specificata'}), 400
         if importo <= 0:
             return jsonify({'error': 'Importo deve essere maggiore di zero'}), 400
         if not ordine:
@@ -389,10 +411,10 @@ if __name__ == '__main__':
     try:
         conn = get_db_connection()
         conn.close()
-        print("✓ Connessione al database MySQL riuscita")
+        print("[OK] Connessione al database MySQL riuscita")
         ensure_configurazione()
     except Exception as e:
-        print(f"✗ Errore connessione database: {e}")
+        print(f"[ERR] Errore connessione database: {e}")
         print("Verifica che MySQL sia attivo e che le credenziali siano corrette")
 
     app.run(debug=True, host='0.0.0.0', port=8080)

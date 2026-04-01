@@ -1,8 +1,11 @@
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, send_file
 import mysql.connector
 from decimal import Decimal, InvalidOperation
 import csv
 import io
+from datetime import datetime
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment
 from notifications import get_conteggio_codici, controlla_e_notifica, SOGLIA
 
 admin_bp = Blueprint('admin', __name__)
@@ -62,8 +65,8 @@ def carica_codici():
             if tipo not in ('CDD', 'YM'):
                 errori.append(f'Riga {i}: Tipo "{tipo}" non valido (usa CDD o YM)')
                 continue
-            if edizione not in ('2024', '2025'):
-                errori.append(f'Riga {i}: Edizione "{edizione}" non valida')
+            if not edizione:
+                errori.append(f'Riga {i}: Edizione mancante')
                 continue
             try:
                 importo_dec = Decimal(importo)
@@ -152,7 +155,7 @@ def toggle_campagna():
         tipo = data.get('tipo', '').upper().strip()
         edizione = data.get('edizione', '').strip()
 
-        if tipo not in ('CDD', 'YM') or edizione not in ('2024', '2025'):
+        if tipo not in ('CDD', 'YM') or not edizione:
             return jsonify({'error': 'Parametri non validi'}), 400
 
         chiave = f'disabilitato_{tipo}_{edizione}'
@@ -188,7 +191,7 @@ def toggle_taglio():
         edizione = data.get('edizione', '').strip()
         importo_str = data.get('importo', '').strip()
 
-        if tipo not in ('CDD', 'YM') or edizione not in ('2024', '2025'):
+        if tipo not in ('CDD', 'YM') or not edizione:
             return jsonify({'error': 'Parametri non validi'}), 400
 
         try:
@@ -260,6 +263,256 @@ def toggle_sistema():
     except Exception as e:
         print(f'Errore toggle sistema: {e}')
         return jsonify({'error': 'Errore interno del server'}), 500
+
+
+@admin_bp.route('/admin/campagne')
+def campagne():
+    """
+    Restituisce la lista delle campagne presenti nel database con i conteggi dei codici.
+    Output: { "campagne": [{ "tipo", "edizione", "disponibili", "usati" }] }
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT Tipo, Edizione,
+                SUM(CASE WHEN StatoCodice = 'Disponibile' THEN 1 ELSE 0 END),
+                SUM(CASE WHEN StatoCodice = 'Usato' THEN 1 ELSE 0 END)
+            FROM Codici
+            GROUP BY Tipo, Edizione
+            ORDER BY Tipo, Edizione
+        """)
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        result = [{'tipo': r[0], 'edizione': r[1], 'disponibili': int(r[2]), 'usati': int(r[3])} for r in rows]
+        return jsonify({'campagne': result})
+    except Exception as e:
+        print(f'Errore campagne: {e}')
+        return jsonify({'error': 'Errore nel recupero delle campagne'}), 500
+
+
+@admin_bp.route('/admin/elimina-campagna', methods=['POST'])
+def elimina_campagna():
+    """
+    Elimina tutti i codici Disponibili di una campagna (Tipo + Edizione).
+    I codici già assegnati (Usato) non vengono toccati.
+    Input: { "tipo": "CDD", "edizione": "2024" }
+    Output: { "eliminati": int }
+    """
+    try:
+        data = request.get_json()
+        tipo = data.get('tipo', '').upper().strip()
+        edizione = data.get('edizione', '').strip()
+
+        if not tipo or not edizione:
+            return jsonify({'error': 'Parametri mancanti'}), 400
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verifica che la campagna esista
+        cursor.execute(
+            "SELECT COUNT(*) FROM Codici WHERE Tipo = %s AND Edizione = %s",
+            (tipo, edizione)
+        )
+        if cursor.fetchone()[0] == 0:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Campagna non trovata'}), 404
+
+        # Elimina solo i codici Disponibili
+        cursor.execute(
+            "DELETE FROM Codici WHERE Tipo = %s AND Edizione = %s AND StatoCodice = 'Disponibile'",
+            (tipo, edizione)
+        )
+        eliminati = cursor.rowcount
+
+        # Rimuove le chiavi di configurazione associate a questa campagna
+        cursor.execute(
+            "DELETE FROM Configurazione WHERE chiave LIKE %s",
+            (f'disabilitato_{tipo}_{edizione}%',)
+        )
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'eliminati': eliminati})
+    except Exception as e:
+        print(f'Errore elimina campagna: {e}')
+        return jsonify({'error': 'Errore interno del server'}), 500
+
+
+def _stile_intestazione(ws, headers, colore_hex='FFF3E8'):
+    """Applica stile alle intestazioni e imposta la larghezza delle colonne."""
+    fill = PatternFill(fill_type='solid', fgColor=colore_hex)
+    font = Font(bold=True, size=11)
+    for col_idx, header in enumerate(headers, start=1):
+        cell = ws.cell(row=1, column=col_idx, value=header)
+        cell.font = font
+        cell.fill = fill
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+        # Larghezza automatica approssimativa
+        ws.column_dimensions[cell.column_letter].width = max(len(header) + 4, 14)
+    ws.freeze_panes = 'A2'
+    ws.row_dimensions[1].height = 20
+
+
+@admin_bp.route('/admin/export/codici')
+def export_codici():
+    """
+    Esporta tutti i codici con dettagli ordine associato in formato Excel.
+    Colonne: CodiceID, Tipo, Edizione, Importo, Stato, ID Ordine,
+             Numero Ordine, Contatto, Motivazione, Dettaglio, Data
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT
+                c.CodiceID, c.Tipo, c.Edizione, c.Importo, c.StatoCodice,
+                o.IdentificativoOrdine, o.Ordine, o.Contatto,
+                o.Motivazione, o.MotivazioneDettaglio, o.DataUtilizzo
+            FROM Codici c
+            LEFT JOIN Ordini o ON o.IdentificativoOrdine = c.IdentificativoOrdine
+            ORDER BY c.Tipo, c.Edizione, c.StatoCodice, c.Importo DESC, c.CodiceID
+        """)
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Codici'
+
+        headers = ['CodiceID', 'Tipo', 'Edizione', 'Importo (€)', 'Stato',
+                   'ID Ordine Interno', 'Numero Ordine', 'Contatto',
+                   'Motivazione', 'Dettaglio Motivazione', 'Data Assegnazione']
+        _stile_intestazione(ws, headers)
+
+        for row in rows:
+            ws.append([
+                row[0], row[1], row[2], float(row[3]) if row[3] else None,
+                row[4], row[5], row[6], row[7], row[8], row[9],
+                row[10].strftime('%d/%m/%Y') if row[10] else None
+            ])
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        filename = f'codici_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        return send_file(output,
+                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                         as_attachment=True,
+                         download_name=filename)
+    except Exception as e:
+        print(f'Errore export codici: {e}')
+        return jsonify({'error': 'Errore durante la generazione del file'}), 500
+
+
+@admin_bp.route('/admin/export/ordini')
+def export_ordini():
+    """
+    Esporta tutti gli ordini con contatto, motivazione, totale e lista codici.
+    Colonne: ID Ordine, Numero Ordine, Contatto, Motivazione, Dettaglio,
+             Data, N. Voucher, Totale €, Codici Assegnati
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT
+                o.IdentificativoOrdine, o.Ordine, o.Contatto,
+                o.Motivazione, o.MotivazioneDettaglio, o.DataUtilizzo,
+                COUNT(c.CodiceID) AS NumeroVoucher,
+                SUM(c.Importo) AS TotaleEuro,
+                GROUP_CONCAT(c.CodiceID ORDER BY c.CodiceID SEPARATOR ', ') AS Codici
+            FROM Ordini o
+            LEFT JOIN Codici c ON c.IdentificativoOrdine = o.IdentificativoOrdine
+            GROUP BY o.IdentificativoOrdine, o.Ordine, o.Contatto,
+                     o.Motivazione, o.MotivazioneDettaglio, o.DataUtilizzo
+            ORDER BY o.DataUtilizzo DESC, o.IdentificativoOrdine DESC
+        """)
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Ordini'
+
+        headers = ['ID Ordine', 'Numero Ordine', 'Contatto', 'Motivazione',
+                   'Dettaglio Motivazione', 'Data', 'N. Voucher', 'Totale (€)', 'Codici Assegnati']
+        _stile_intestazione(ws, headers)
+
+        for row in rows:
+            ws.append([
+                row[0], row[1], row[2], row[3], row[4],
+                row[5].strftime('%d/%m/%Y') if row[5] else None,
+                int(row[6]) if row[6] else 0,
+                float(row[7]) if row[7] else 0.0,
+                row[8]
+            ])
+        # Colonna "Codici Assegnati" più larga
+        ws.column_dimensions['I'].width = 60
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        filename = f'ordini_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        return send_file(output,
+                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                         as_attachment=True,
+                         download_name=filename)
+    except Exception as e:
+        print(f'Errore export ordini: {e}')
+        return jsonify({'error': 'Errore durante la generazione del file'}), 500
+
+
+@admin_bp.route('/admin/export/riepilogo')
+def export_riepilogo():
+    """
+    Esporta il riepilogo aggregato per campagna (Tipo + Edizione + Importo).
+    Colonne: Tipo, Edizione, Taglio (€), Disponibili, Usati, Totale
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT
+                Tipo, Edizione, Importo,
+                SUM(CASE WHEN StatoCodice = 'Disponibile' THEN 1 ELSE 0 END) AS Disponibili,
+                SUM(CASE WHEN StatoCodice = 'Usato' THEN 1 ELSE 0 END) AS Usati,
+                COUNT(*) AS Totale
+            FROM Codici
+            GROUP BY Tipo, Edizione, Importo
+            ORDER BY Tipo, Edizione, Importo DESC
+        """)
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Riepilogo Campagne'
+
+        headers = ['Tipo', 'Edizione', 'Taglio (€)', 'Disponibili', 'Usati', 'Totale']
+        _stile_intestazione(ws, headers)
+
+        for row in rows:
+            ws.append([row[0], row[1], float(row[2]), int(row[3]), int(row[4]), int(row[5])])
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        filename = f'riepilogo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        return send_file(output,
+                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                         as_attachment=True,
+                         download_name=filename)
+    except Exception as e:
+        print(f'Errore export riepilogo: {e}')
+        return jsonify({'error': 'Errore durante la generazione del file'}), 500
 
 
 @admin_bp.route('/admin/invia-notifica', methods=['POST'])

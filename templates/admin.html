@@ -308,6 +308,101 @@
         .reset-link:hover { color: var(--text); }
 
         footer { margin-top: 40px; font-size: 11px; color: #d9c4b4; letter-spacing: 0.3px; }
+
+        /* Export */
+        .export-grid { display: flex; flex-direction: column; gap: 14px; }
+        .export-card {
+            display: flex; align-items: center; gap: 16px;
+            padding: 18px 16px; border: 1px solid var(--border);
+            border-radius: 10px; transition: border-color 0.2s, background 0.2s;
+        }
+        .export-card:hover { border-color: var(--accent); background: var(--accent-soft); }
+        .export-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            background: var(--accent-soft); border: 1px solid rgba(249,115,22,0.2);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; font-size: 18px;
+        }
+        .export-info { flex: 1; }
+        .export-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+        .export-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+        .export-btn {
+            padding: 8px 16px; border-radius: 20px; border: none;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+            color: #fff; font-family: 'DM Sans', sans-serif;
+            font-size: 12px; font-weight: 700; cursor: pointer;
+            text-decoration: none; display: inline-block;
+            box-shadow: 0 2px 10px rgba(249,115,22,0.3);
+            transition: box-shadow 0.2s, transform 0.15s; white-space: nowrap;
+        }
+        .export-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(249,115,22,0.45); }
+
+        /* Gestione campagne */
+        .campagna-card {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 14px;
+            transition: border-color 0.2s;
+        }
+        .campagna-card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .campagna-card-title {
+            font-size: 15px; font-weight: 700; color: var(--text);
+        }
+        .campagna-card-stats {
+            display: flex; gap: 10px; margin-bottom: 12px;
+        }
+        .campagna-stat {
+            flex: 1; padding: 10px 8px; border-radius: 8px;
+            text-align: center; border: 1px solid transparent;
+        }
+        .campagna-stat.disponibili { background: var(--success-bg); border-color: rgba(22,163,74,0.15); }
+        .campagna-stat.usati { background: rgba(249,115,22,0.06); border-color: rgba(249,115,22,0.2); }
+        .campagna-stat-num { font-size: 22px; font-weight: 700; line-height: 1; margin-bottom: 3px; }
+        .campagna-stat.disponibili .campagna-stat-num { color: var(--success); }
+        .campagna-stat.usati .campagna-stat-num { color: var(--accent); }
+        .campagna-stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+        .campagna-confirm {
+            margin-top: 8px; padding: 12px 14px;
+            background: var(--error-bg); border: 1px solid rgba(220,38,38,0.2);
+            border-radius: 8px; font-size: 13px; color: var(--error);
+        }
+        .campagna-confirm p { margin-bottom: 10px; font-weight: 500; }
+        .campagna-confirm-btns { display: flex; gap: 8px; }
+        .btn-conferma {
+            flex: 1; padding: 8px 12px; border: none; border-radius: 8px;
+            background: linear-gradient(135deg, var(--error) 0%, #991b1b 100%);
+            color: #fff; font-family: 'DM Sans', sans-serif;
+            font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.2s;
+        }
+        .btn-conferma:hover { opacity: 0.88; }
+        .btn-conferma:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-annulla-conf {
+            flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px;
+            background: transparent; color: var(--text-muted);
+            font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .btn-annulla-conf:hover { border-color: var(--text-muted); color: var(--text); }
+        .elimina-btn {
+            padding: 5px 14px; border-radius: 20px;
+            border: 1px solid rgba(220,38,38,0.35);
+            background: transparent; color: var(--error);
+            font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+            cursor: pointer; transition: all 0.18s;
+        }
+        .elimina-btn:hover { background: var(--error-bg); }
+        .campagne-empty { text-align: center; padding: 32px 0; color: var(--text-muted); font-size: 14px; }
+        .campagne-new-hint {
+            margin-top: 4px; padding: 14px 16px;
+            background: var(--accent-soft); border: 1px solid rgba(249,115,22,0.2);
+            border-radius: 10px; font-size: 13px; color: var(--text-muted); text-align: center;
+        }
+        .campagne-new-hint a { color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: none; }
+        .campagne-new-hint a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -326,6 +421,8 @@
         <div class="card">
             <div class="mode-tabs">
                 <button class="mode-tab active" onclick="switchTab('carica')">Carica Codici</button>
+                <button class="mode-tab" onclick="switchTab('campagne')">Campagne</button>
+                <button class="mode-tab" onclick="switchTab('export')">Export</button>
                 <button class="mode-tab" onclick="switchTab('monitoraggio')">Monitoraggio</button>
                 <button class="mode-tab" onclick="switchTab('sistema')">Sistema</button>
             </div>
@@ -354,6 +451,46 @@
                     <button type="submit" class="submit-btn" id="uploadBtn">Carica Codici</button>
                 </form>
                 <div id="outputUpload"></div>
+            </div>
+
+            <!-- Tab: Export -->
+            <div id="panelExport" class="panel">
+                <div class="export-grid">
+                    <div class="export-card">
+                        <div class="export-icon">📋</div>
+                        <div class="export-info">
+                            <div class="export-title">Codici Completo</div>
+                            <div class="export-desc">Tutti i codici con stato (disponibile/usato), campagna, importo e dettagli dell'ordine associato: numero ordine, contatto, motivazione, data.</div>
+                        </div>
+                        <a href="/admin/export/codici" class="export-btn">↓ Excel</a>
+                    </div>
+                    <div class="export-card">
+                        <div class="export-icon">📦</div>
+                        <div class="export-info">
+                            <div class="export-title">Ordini Completo</div>
+                            <div class="export-desc">Tutti gli ordini con contatto, motivazione, dettaglio, data, numero di voucher assegnati, totale in euro e lista completa dei codici.</div>
+                        </div>
+                        <a href="/admin/export/ordini" class="export-btn">↓ Excel</a>
+                    </div>
+                    <div class="export-card">
+                        <div class="export-icon">📊</div>
+                        <div class="export-info">
+                            <div class="export-title">Riepilogo Campagne</div>
+                            <div class="export-desc">Aggregato per tipo, edizione e taglio: quanti codici disponibili, quanti usati e totale per ogni denominazione.</div>
+                        </div>
+                        <a href="/admin/export/riepilogo" class="export-btn">↓ Excel</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Campagne -->
+            <div id="panelCampagne" class="panel">
+                <div id="campagneListGrid"><p style="color:var(--text-muted);font-size:13px;text-align:center;padding:24px 0;">Caricamento...</p></div>
+                <div id="campagneListOutput"></div>
+                <div class="campagne-new-hint">
+                    Per caricare una nuova campagna vai al tab
+                    <a onclick="switchTab('carica')">Carica Codici</a>
+                </div>
             </div>
 
             <!-- Tab: Sistema -->
@@ -395,10 +532,96 @@
             document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
             document.querySelector(`.mode-tab[onclick="switchTab('${tab}')"]`).classList.add('active');
-            const map = { carica: 'panelCarica', monitoraggio: 'panelMonitoraggio', sistema: 'panelSistema' };
+            const map = { carica: 'panelCarica', campagne: 'panelCampagne', export: 'panelExport', monitoraggio: 'panelMonitoraggio', sistema: 'panelSistema' };
             document.getElementById(map[tab]).classList.add('active');
             if (tab === 'monitoraggio') caricaMonitoraggio();
             if (tab === 'sistema') caricaStatoSistema();
+            if (tab === 'campagne') caricaCampagne();
+        }
+
+        // --- Gestione Campagne ---
+        function buildCampagneListHTML(campagne) {
+            if (campagne.length === 0) {
+                return `<div class="campagne-empty">
+                    <p>Nessuna campagna presente nel database.</p>
+                    <p style="font-size:12px; margin-top:8px;">Carica un file CSV dal tab <a onclick="switchTab('carica')" style="color:var(--accent);cursor:pointer;font-weight:600;">Carica Codici</a> per aggiungere la prima campagna.</p>
+                </div>`;
+            }
+            return campagne.map(c => `
+                <div class="campagna-card" id="card-${c.tipo}-${c.edizione}">
+                    <div class="campagna-card-header">
+                        <span class="campagna-card-title">${c.tipo} · ${c.edizione}</span>
+                        <button class="elimina-btn" onclick="mostraConfermaElimina('${c.tipo}', '${c.edizione}', this)">Elimina</button>
+                    </div>
+                    <div class="campagna-card-stats">
+                        <div class="campagna-stat disponibili">
+                            <div class="campagna-stat-num">${c.disponibili}</div>
+                            <div class="campagna-stat-label">Disponibili</div>
+                        </div>
+                        <div class="campagna-stat usati">
+                            <div class="campagna-stat-num">${c.usati}</div>
+                            <div class="campagna-stat-label">Già usati</div>
+                        </div>
+                    </div>
+                    <div class="campagna-confirm" id="confirm-${c.tipo}-${c.edizione}" style="display:none;">
+                        <p>Verranno eliminati <strong>${c.disponibili} codici disponibili</strong>.${c.usati > 0 ? ` I ${c.usati} codici già assegnati rimarranno nel database.` : ''} Continuare?</p>
+                        <div class="campagna-confirm-btns">
+                            <button class="btn-conferma" onclick="eseguiElimina('${c.tipo}', '${c.edizione}', this)">Sì, elimina</button>
+                            <button class="btn-annulla-conf" onclick="nascondConferma('${c.tipo}', '${c.edizione}')">Annulla</button>
+                        </div>
+                    </div>
+                </div>`).join('');
+        }
+
+        async function caricaCampagne() {
+            const grid = document.getElementById('campagneListGrid');
+            const output = document.getElementById('campagneListOutput');
+            grid.innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:24px 0;">Caricamento...</p>';
+            output.innerHTML = '';
+            try {
+                const res = await fetch('/admin/campagne');
+                const data = await res.json();
+                if (!res.ok) { grid.innerHTML = `<div class="error-msg">${data.error}</div>`; return; }
+                grid.innerHTML = buildCampagneListHTML(data.campagne);
+            } catch (err) {
+                grid.innerHTML = '<div class="error-msg">Errore di connessione. Riprova.</div>';
+            }
+        }
+
+        function mostraConfermaElimina(tipo, edizione, btn) {
+            btn.style.display = 'none';
+            document.getElementById(`confirm-${tipo}-${edizione}`).style.display = 'block';
+        }
+
+        function nascondConferma(tipo, edizione) {
+            document.getElementById(`confirm-${tipo}-${edizione}`).style.display = 'none';
+            const card = document.getElementById(`card-${tipo}-${edizione}`);
+            card.querySelector('.elimina-btn').style.display = '';
+        }
+
+        async function eseguiElimina(tipo, edizione, btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Eliminazione...';
+            const output = document.getElementById('campagneListOutput');
+            output.innerHTML = '';
+            try {
+                const res = await fetch('/admin/elimina-campagna', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tipo, edizione })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    output.innerHTML = `<div class="error-msg">${data.error}</div>`;
+                    nascondConferma(tipo, edizione);
+                    return;
+                }
+                output.innerHTML = `<div class="summary">Campagna ${tipo} · ${edizione}: ${data.eliminati} codici disponibili eliminati.</div>`;
+                await caricaCampagne();
+            } catch (err) {
+                output.innerHTML = '<div class="error-msg">Errore di connessione. Riprova.</div>';
+                nascondConferma(tipo, edizione);
+            }
         }
 
         // --- Upload ---
