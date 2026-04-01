@@ -3,16 +3,18 @@ import mysql.connector
 from decimal import Decimal, ROUND_UP
 from admin import admin_bp
 from notifications import controlla_e_notifica
+import os
 
 app = Flask(__name__)
 app.register_blueprint(admin_bp)
 
 # Configurazione database
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '12345678',  # CAMBIA CON LA TUA PASSWORD
-    'database': 'CDD_YM'
+    'host': os.environ.get('MYSQLHOST', 'localhost'),
+    'user': os.environ.get('MYSQLUSER', 'root'),
+    'password': os.environ.get('MYSQLPASSWORD', '12345678'),
+    'database': os.environ.get('MYSQLDATABASE', 'CDD_YM'),
+    'port': int(os.environ.get('MYSQLPORT', 3306))
 }
 
 MOTIVAZIONI_VALIDE = ('DNR', 'Correlato al Reso', 'Articolo Errato', 'Articolo Mancante', 'Altro')

@@ -9,6 +9,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import mysql.connector
+import os
 
 # --- Soglia di attenzione (numero codici disponibili) ---
 SOGLIA = 20
@@ -28,10 +29,11 @@ EMAIL_CONFIG = {
 
 # --- Configurazione database (deve corrispondere a quella in app.py) ---
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '12345678',
-    'database': 'CDD_YM'
+    'host': os.environ.get('MYSQLHOST', 'localhost'),
+    'user': os.environ.get('MYSQLUSER', 'root'),
+    'password': os.environ.get('MYSQLPASSWORD', '12345678'),
+    'database': os.environ.get('MYSQLDATABASE', 'CDD_YM'),
+    'port': int(os.environ.get('MYSQLPORT', 3306))
 }
 
 
