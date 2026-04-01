@@ -26,7 +26,7 @@ CDD_YM/
 ├── CLAUDE.md                  # This file
 └── CDD_YM/                    # Application root
     ├── app.py                 # Flask application: core routes, business logic, DB access
-    ├── admin.py               # Flask Blueprint: admin routes (/admin, /carica, /admin/stato-codici, /admin/invia-notifica)
+    ├── admin.py               # Flask Blueprint: admin routes (/admin, /carica, /admin/stato-codici, /admin/toggle-campagna, /admin/toggle-taglio, /admin/export/*, /admin/invia-notifica)
     ├── notifications.py       # Email monitoring: code-level threshold check and SMTP sending
     ├── carica_codici.py       # CLI script: bulk CSV loader (alternative to web UI upload)
     ├── requirements.txt       # Pinned Python dependencies
@@ -36,7 +36,7 @@ CDD_YM/
     │   └── logo-icon.svg      # Icon-only logo (scalable, for favicon/avatar use)
     └── templates/
         ├── index.html         # Main UI — Assign / Restore / Search tabs (HTML + CSS + JS)
-        ├── admin.html         # Admin panel — Carica Codici / Monitoraggio tabs
+        ├── admin.html         # Admin panel — Carica Codici / Campagne / Export / Monitoraggio / Sistema tabs
         └── guida.html         # Operator guide page with step-by-step instructions
 ```
 
@@ -44,7 +44,7 @@ CDD_YM/
 
 **`app.py`** contains the core business logic: Flask route definitions, the voucher selection algorithm, database helper functions, and startup connection check. It registers `admin_bp` from `admin.py` and calls `controlla_e_notifica()` from `notifications.py` after every successful assignment.
 
-**`admin.py`** is a Flask Blueprint (`admin_bp`) registered in `app.py`. It owns all admin-facing routes. It has its own `DB_CONFIG` copy (see Section 7 — DB_CONFIG duplication). Admin routes are accessible only via direct URL — there is no link from the main UI.
+**`admin.py`** is a Flask Blueprint (`admin_bp`) registered in `app.py`. It owns all admin-facing routes. It has its own `DB_CONFIG` copy (see Section 7 — DB_CONFIG duplication). Admin routes are accessible only via direct URL — there is no link from the main UI. It imports `openpyxl` for Excel export generation (`/admin/export/codici`, `/admin/export/ordini`, `/admin/export/riepilogo`).
 
 **`notifications.py`** contains the monitoring and email logic. It defines `SOGLIA` (threshold), `get_conteggio_codici()` (returns counts grouped by Tipo + Edizione + Importo), `controlla_e_notifica()` (checks counts, sends email if any taglio is below threshold), and `_invia_email()` (SMTP sending). Configure `EMAIL_CONFIG` here before going to production.
 
@@ -52,7 +52,7 @@ CDD_YM/
 
 **`templates/index.html`** is a self-contained frontend. All CSS (via `<style>`) and JavaScript (via `<script>`) are inline in this file. There are no external static assets. The JS includes a complete i18n system (`TRANSLATIONS` object) for Italian and English.
 
-**`templates/admin.html`** is the admin panel UI. It has four tabs: **Carica Codici** (CSV file upload), **Campagne** (per-campaign management — view counts, delete available codes), **Monitoraggio** (per-taglio availability dashboard with manual notification trigger), and **Sistema** (distribution kill switch — ON/OFF toggle backed by the `Configurazione` table). CSS is inline and duplicated — changes must also be applied to `index.html` and `guida.html`.
+**`templates/admin.html`** is the admin panel UI. It has five tabs: **Carica Codici** (CSV file upload), **Campagne** (per-campaign management — view counts, toggle per campagna, toggle per taglio, delete available codes), **Export** (one-click Excel downloads for codes, orders, and campaign summary), **Monitoraggio** (per-taglio availability dashboard with manual notification trigger), and **Sistema** (distribution kill switch — ON/OFF toggle backed by the `Configurazione` table). CSS is inline and duplicated — changes must also be applied to `index.html` and `guida.html`.
 
 **`templates/guida.html`** is a static informational page for operators. It shares the same visual design as `index.html` but its CSS is duplicated inline — there is no shared stylesheet. Changes to the visual design must be applied to both files manually.
 
@@ -101,6 +101,7 @@ The algorithm does not guarantee a globally optimal combination in all cases, bu
 |---|---|---|
 | Backend | Python / Flask | Flask 3.0.0 |
 | Database driver | mysql-connector-python | 8.2.0 |
+| Excel generation | openpyxl | 3.1.2 |
 | Database | MySQL | 8.0+ |
 | Frontend | Vanilla HTML/CSS/JavaScript | No framework |
 | Fonts | Google Fonts (DM Sans, Playfair Display) | CDN |
@@ -144,7 +145,12 @@ The database is named `CDD_YM` and contains three tables.
 | `chiave` | `VARCHAR(64)` PK | Setting key |
 | `valore` | `VARCHAR(64)` | Setting value |
 
-Currently holds one row: `distribuzione_attiva = '1'` (active) or `'0'` (disabled). Created automatically by `ensure_configurazione()` on first startup — no manual SQL needed.
+Holds multiple rows:
+- `distribuzione_attiva` — `'1'` (active) or `'0'` (disabled); created automatically by `ensure_configurazione()` on first startup.
+- `disabilitato_{Tipo}_{Edizione}` — `'1'` when a campaign is disabled (e.g. `disabilitato_CDD_2025`).
+- `disabilitato_{Tipo}_{Edizione}_{importo}` — `'1'` when a single denomination is disabled (e.g. `disabilitato_CDD_2025_25.00`).
+
+Campaign and taglio keys are created on first toggle and removed automatically when a campaign is deleted via `elimina-campagna`. No manual SQL needed.
 
 ### Relationship
 
@@ -214,7 +220,7 @@ The endpoint `GET /campagne-attive` (`app.py`) returns the distinct editions tha
 
 ### DB_CONFIG duplication
 
-`DB_CONFIG` and `get_db_connection()` are defined independently in `app.py`, `admin.py`, `notifications.py`, and `carica_codici.py`. This is intentional for PoC simplicity (each module is self-contained). When the database password or host changes, all four files must be updated. The receiving company should consolidate this into a single `config.py` or use environment variables.
+`DB_CONFIG` and `get_db_connection()` are defined independently in `app.py`, `admin.py`, `notifications.py`, and `carica_codici.py`. This is intentional for PoC simplicity (each module is self-contained). All four modules already read from environment variables (`MYSQLHOST`, `MYSQLUSER`, `MYSQLPASSWORD`, `MYSQLDATABASE`, `MYSQLPORT`) with local fallbacks — so in practice only the environment needs to be updated, not the code. `carica_codici.py` is the only exception; verify it also uses env vars if you modify it. The receiving company should consolidate this into a single `config.py` if they move away from environment variables.
 
 ### Email notification side effects in `/assegna`
 
@@ -287,7 +293,7 @@ Open `notifications.py` and fill in `EMAIL_CONFIG`:
 - `username` / `password`: sender credentials (use an App Password for Gmail)
 - `destinatario`: the maintainer's email address
 
-The threshold is `SOGLIA = 50` at the top of the file. Change it to adjust the alert level.
+The threshold is `SOGLIA = 20` at the top of the file. Change it to adjust the alert level.
 Notifications are per taglio (Tipo + Edizione + Importo). Each denomination is checked independently.
 
 ### Extending the search
@@ -316,5 +322,4 @@ The `/cerca` endpoint executes a UNION query that searches `Ordini.Ordine`, `Ord
 
 ---
 
-*Last updated: March 2026 — Matteo Cambarau*
-*Branch: `feature/caricamentoCodiciGaranzia` — changes not yet merged to `main`*
+*Last updated: April 2026 — Matteo Cambarau*
