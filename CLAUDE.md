@@ -20,20 +20,19 @@ The system manages voucher types and editions **fully dynamically** — any `Tip
 CDD_YM/
 ├── README.md                  # End-user installation guide and API reference
 ├── CLAUDE.md                  # This file
-└── CDD_YM/                    # Application root
-    ├── app.py                 # Flask application: core routes, business logic, DB access
-    ├── admin.py               # Flask Blueprint: admin routes (/admin, /carica, /admin/stato-codici, /admin/toggle-campagna, /admin/toggle-taglio, /admin/export/*, /admin/invia-notifica)
-    ├── notifications.py       # Email monitoring: code-level threshold check and SMTP sending
-    ├── carica_codici.py       # CLI script: bulk CSV loader (alternative to web UI upload)
-    ├── requirements.txt       # Pinned Python dependencies
-    ├── .gitignore
-    ├── static/
-    │   ├── logo.svg           # Full horizontal logo (icon + wordmark + tagline)
-    │   └── logo-icon.svg      # Icon-only logo (scalable, for favicon/avatar use)
-    └── templates/
-        ├── index.html         # Main UI — Assign / Restore / Search tabs (HTML + CSS + JS)
-        ├── admin.html         # Admin panel — Carica Codici / Campagne / Export / Monitoraggio / Sistema tabs
-        └── guida.html         # Operator guide page with step-by-step instructions
+├── app.py                     # Flask application: core routes, business logic, DB access
+├── admin.py                   # Flask Blueprint: admin routes (/admin, /carica, /admin/stato-codici, /admin/toggle-campagna, /admin/toggle-taglio, /admin/export/*, /admin/invia-notifica)
+├── notifications.py           # Email monitoring: code-level threshold check and SMTP sending
+├── carica_codici.py           # CLI script: bulk CSV loader (alternative to web UI upload)
+├── requirements.txt           # Pinned Python dependencies
+├── .gitignore
+├── static/
+│   ├── logo.svg               # Full horizontal logo (icon + wordmark + tagline)
+│   └── logo-icon.svg          # Icon-only logo (scalable, for favicon/avatar use)
+└── templates/
+    ├── index.html             # Main UI — Assign / Restore / Search tabs (HTML + CSS + JS)
+    ├── admin.html             # Admin panel — Carica Codici / Campagne / Export / Monitoraggio / Sistema tabs
+    └── guida.html             # Operator guide page with step-by-step instructions
 ```
 
 ### Key file roles
@@ -321,9 +320,9 @@ The `/cerca` endpoint executes a UNION query that searches `Ordini.Ordine`, `Ord
 
 ## 10. Migration Notes
 
-### Branch `differenziazioneCampagna` — April 2026
+### Dynamic voucher types — merged into `main` April 2026
 
-The `Tipo` column was changed from `ENUM('CDD', 'YM')` to `VARCHAR(32)` to support fully dynamic voucher types. Run the following SQL once on any existing database before deploying:
+The `Tipo` column was changed from `ENUM('CDD', 'YM')` to `VARCHAR(32)` to support fully dynamic voucher types. **This change is now in `main`.** If you are working from a database created before April 2026, run the following SQL once before deploying:
 
 ```sql
 ALTER TABLE Codici MODIFY Tipo VARCHAR(32) NOT NULL;

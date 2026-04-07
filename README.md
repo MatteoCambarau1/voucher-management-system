@@ -37,7 +37,7 @@ The application connects to a local MySQL instance. Ensure the MySQL server is r
 
 ```bash
 git clone https://github.com/MatteoCambarau1/CDD_YM.git
-cd CDD_YM/CDD_YM
+cd CDD_YM
 ```
 
 **2. Create and activate a virtual environment (recommended)**
