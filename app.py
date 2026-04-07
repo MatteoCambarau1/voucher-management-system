@@ -1,15 +1,20 @@
 from flask import Flask, render_template, request, jsonify
 import mysql.connector
 from decimal import Decimal, ROUND_UP
+from admin import admin_bp
+from notifications import controlla_e_notifica
+import os
 
 app = Flask(__name__)
+app.register_blueprint(admin_bp)
 
 # Configurazione database
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '12345678',  # CAMBIA CON LA TUA PASSWORD
-    'database': 'CDD_YM'
+    'host': os.environ.get('MYSQLHOST', 'localhost'),
+    'user': os.environ.get('MYSQLUSER', 'root'),
+    'password': os.environ.get('MYSQLPASSWORD', '12345678'),
+    'database': os.environ.get('MYSQLDATABASE', 'CDD_YM'),
+    'port': int(os.environ.get('MYSQLPORT', 3306))
 }
 
 MOTIVAZIONI_VALIDE = ('DNR', 'Correlato al Reso', 'Articolo Errato', 'Articolo Mancante', 'Altro')
@@ -17,9 +22,60 @@ MOTIVAZIONI_VALIDE = ('DNR', 'Correlato al Reso', 'Articolo Errato', 'Articolo M
 def get_db_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
+def ensure_configurazione():
+    """Crea la tabella Configurazione e il record distribuzione_attiva se non esistono."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS Configurazione (
+            chiave VARCHAR(64) PRIMARY KEY,
+            valore VARCHAR(64) NOT NULL
+        )
+    """)
+    cursor.execute(
+        "INSERT IGNORE INTO Configurazione (chiave, valore) VALUES ('distribuzione_attiva', '1')"
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def is_distribuzione_attiva():
+    """Restituisce True se la distribuzione codici è attiva."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT valore FROM Configurazione WHERE chiave = 'distribuzione_attiva'")
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return row is not None and row[0] == '1'
+
+def is_campagna_attiva(tipo, edizione):
+    """Restituisce True se la campagna tipo+edizione non è disabilitata."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT valore FROM Configurazione WHERE chiave = %s",
+        (f'disabilitato_{tipo}_{edizione}',)
+    )
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return row is None or row[0] != '1'
+
 def check_codici_disponibili(tipo, edizione):
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # Recupera i tagli disabilitati per questa campagna
+    prefix = f'disabilitato_{tipo}_{edizione}_'
+    cursor.execute(
+        "SELECT chiave FROM Configurazione WHERE chiave LIKE %s AND valore = '1'",
+        (prefix + '%',)
+    )
+    tagli_disabilitati = set()
+    for (chiave,) in cursor.fetchall():
+        tagli_disabilitati.add(chiave[len(prefix):])
+
     query = """
         SELECT CodiceID, Tipo, Importo, Edizione
         FROM Codici
@@ -32,6 +88,10 @@ def check_codici_disponibili(tipo, edizione):
     righe = cursor.fetchall()
     cursor.close()
     conn.close()
+
+    if tagli_disabilitati:
+        righe = [r for r in righe if f'{float(r[2]):.2f}' not in tagli_disabilitati]
+
     return righe
 
 def calcola_codici_necessari(tipo, edizione, importo_richiesto):
@@ -93,6 +153,33 @@ def marca_codici_usati(conn, cursor, codici_selezionati, identificativo_ordine):
         dati
     )
 
+@app.route('/campagne-attive')
+def campagne_attive():
+    """
+    Restituisce i tipi e le edizioni che hanno almeno un codice Disponibile, raggruppati per tipo.
+    Usato dal frontend per popolare dinamicamente i selettori di tipo ed edizione.
+    Output: { "campagne": [{"tipo": "CDD", "edizioni": ["2024", "2025"]}, ...] }
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT DISTINCT Tipo, Edizione FROM Codici WHERE StatoCodice = 'Disponibile' ORDER BY Tipo, Edizione"
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        campagne = {}
+        for tipo_r, edizione_r in rows:
+            if tipo_r not in campagne:
+                campagne[tipo_r] = []
+            campagne[tipo_r].append(edizione_r)
+        return jsonify({'campagne': [{'tipo': t, 'edizioni': e} for t, e in campagne.items()]})
+    except Exception as e:
+        print(f'Errore campagne-attive: {e}')
+        return jsonify({'error': 'Errore interno del server'}), 500
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -107,10 +194,13 @@ def assegna_codici():
     Riceve JSON: { tipo, edizione, importo, ordine, contatto, motivazione, motivazione_dettaglio }
     Restituisce JSON: { codici, totale, importo_richiesto, identificativo_ordine }
     """
+    if not is_distribuzione_attiva():
+        return jsonify({'error': 'Sistema di distribuzione temporaneamente disattivato'}), 503
+
     try:
         data = request.get_json()
 
-        tipo       = data.get('tipo', '').upper().strip()
+        tipo       = data.get('tipo', '').strip()
         edizione   = data.get('edizione', '').strip()
         importo    = float(data.get('importo', 0))
         ordine     = data.get('ordine', '').strip()
@@ -119,10 +209,10 @@ def assegna_codici():
         motivazione_dettaglio = data.get('motivazione_dettaglio', '').strip()
 
         # Validazione
-        if tipo not in ['CDD', 'YM']:
-            return jsonify({'error': 'Tipo voucher non valido'}), 400
-        if edizione not in ['2024', '2025']:
-            return jsonify({'error': 'Edizione non valida'}), 400
+        if not tipo:
+            return jsonify({'error': 'Tipo voucher non specificato'}), 400
+        if not edizione:
+            return jsonify({'error': 'Edizione non specificata'}), 400
         if importo <= 0:
             return jsonify({'error': 'Importo deve essere maggiore di zero'}), 400
         if not ordine:
@@ -133,6 +223,9 @@ def assegna_codici():
             return jsonify({'error': 'Motivazione non valida'}), 400
         if motivazione == 'Altro' and not motivazione_dettaglio:
             return jsonify({'error': 'Specificare la motivazione per "Altro"'}), 400
+
+        if not is_campagna_attiva(tipo, edizione):
+            return jsonify({'error': f'Campagna {tipo} {edizione} temporaneamente disabilitata'}), 503
 
         codici_selezionati = calcola_codici_necessari(tipo, edizione, importo)
         if not codici_selezionati:
@@ -154,6 +247,9 @@ def assegna_codici():
 
         cursor.close()
         conn.close()
+
+        # Controlla i livelli residui e invia email se sotto soglia
+        controlla_e_notifica()
 
         codici_response = []
         totale = Decimal('0')
@@ -322,9 +418,10 @@ if __name__ == '__main__':
     try:
         conn = get_db_connection()
         conn.close()
-        print("✓ Connessione al database MySQL riuscita")
+        print("[OK] Connessione al database MySQL riuscita")
+        ensure_configurazione()
     except Exception as e:
-        print(f"✗ Errore connessione database: {e}")
+        print(f"[ERR] Errore connessione database: {e}")
         print("Verifica che MySQL sia attivo e che le credenziali siano corrette")
 
     app.run(debug=True, host='0.0.0.0', port=8080)

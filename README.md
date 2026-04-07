@@ -7,12 +7,15 @@ A web application for managing and distributing Italian government voucher codes
 ## Key Features
 
 - **Automated code selection** — given a requested amount, the system applies a greedy algorithm to pick the optimal combination of available voucher codes, rounding up to the nearest €0.50 increment when an exact match is unavailable
-- **Dual voucher type support** — handles both CDD (Carta del Docente) and YM (Giovani Merito) vouchers across multiple annual editions (2024, 2025)
+- **Fully dynamic voucher types and editions** — the system supports any combination of voucher type and edition without code changes; loading a CSV with a new `Tipo` (e.g. `CartaCultura`, `18app`) automatically makes it selectable in the UI
 - **Order tracking** — every assignment is persisted to a MySQL database with the associated order ID, contact ID, motivation, and date
 - **Code restore** — previously assigned codes can be reverted to "Available" status, detaching them from their order record
 - **Search** — look up past assignments by order number, contact ID, or individual voucher code
 - **Bilingual UI** — the interface supports Italian and English, switchable at runtime without a page reload
 - **Copy to clipboard** — assigned codes can be copied in a single click, ready to paste into external systems
+- **Per-campaign and per-denomination disable** — admin toggles to block assignments for a specific campaign (Tipo + Edizione) or a single denomination (e.g. €25.00 CDD 2025) without deleting any codes; re-enabling restores normal operation instantly
+- **Distribution kill switch** — global admin toggle that blocks all new assignments system-wide; persisted in the database and survives server restarts
+- **Excel export** — one-click download of three reports: full code list with order details, full order list with assigned codes, and an aggregated summary by campaign and denomination
 
 ---
 
@@ -56,6 +59,7 @@ The `requirements.txt` pins the following packages:
 ```
 Flask==3.0.0
 mysql-connector-python==8.2.0
+openpyxl==3.1.2
 ```
 
 **4. Set up the MySQL database**
@@ -69,7 +73,7 @@ USE CDD_YM;
 
 CREATE TABLE Codici (
     CodiceID        VARCHAR(64)  NOT NULL PRIMARY KEY,
-    Tipo            ENUM('CDD', 'YM') NOT NULL,
+    Tipo            VARCHAR(32)  NOT NULL,
     Importo         DECIMAL(10, 2) NOT NULL,
     Edizione        VARCHAR(4)   NOT NULL,
     StatoCodice     ENUM('Disponibile', 'Usato') NOT NULL DEFAULT 'Disponibile',
@@ -90,16 +94,19 @@ CREATE TABLE Ordini (
 
 **5. Configure the database connection**
 
-Open `app.py` and update the `DB_CONFIG` dictionary at the top of the file with your MySQL credentials:
+The application reads database credentials from environment variables with sensible fallbacks for local development:
 
-```python
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'YOUR_PASSWORD',   # <-- change this
-    'database': 'CDD_YM'
-}
-```
+| Variable | Default | Description |
+|---|---|---|
+| `MYSQLHOST` | `localhost` | Database host |
+| `MYSQLUSER` | `root` | Database user |
+| `MYSQLPASSWORD` | *(none)* | Database password |
+| `MYSQLDATABASE` | `CDD_YM` | Database name |
+| `MYSQLPORT` | `3306` | Database port |
+
+**Local development:** set the variables in your shell or create a `.env` file and export them before running the app.
+
+**Railway / cloud hosting:** set the variables in the platform dashboard. Railway injects them automatically when a MySQL plugin is attached.
 
 ---
 
@@ -108,6 +115,8 @@ DB_CONFIG = {
 ```bash
 python app.py
 ```
+
+> **Windows note:** if you get a `UnicodeEncodeError` on startup, run with `python -X utf8 app.py` instead.
 
 On startup the application tests the database connection and reports whether it succeeded:
 
@@ -128,8 +137,8 @@ The interface is organised into three tabs.
 
 Use this tab to distribute voucher codes to a beneficiary.
 
-1. Select the **voucher type**: CDD (Carta del Docente) or YM (Giovani Merito).
-2. Select the **edition**: 2024 or 2025.
+1. Select the **voucher type** from the available buttons — populated dynamically from the database (e.g. CDD, YM, CartaCultura, 18app).
+2. Select the **edition** — updates automatically to show only editions available for the selected type.
 3. Enter the **requested amount** in euros (e.g. `47.30`).
 4. Enter the **Order ID** and **Contact ID** from your order management system.
 5. Choose a **motivation** from the dropdown. If you select "Altro" (Other), an additional text field appears to describe the reason.
@@ -167,23 +176,70 @@ Results show all matching orders with their associated codes, motivation, and as
 
 ---
 
+## Admin Panel
+
+Navigate to [http://localhost:8080/admin](http://localhost:8080/admin) to access the administration panel. It has five tabs.
+
+### Carica Codici
+
+Upload a CSV file to bulk-insert new voucher codes into the database. Expected columns: `CodiceID`, `Tipo`, `Importo`, `Edizione`. Re-uploading the same file is safe — duplicates are silently skipped (`INSERT IGNORE`).
+
+### Campagne
+
+View all campaigns (Tipo + Edizione combinations) loaded in the database with their available and used code counts.
+
+Each campaign has two levels of granular control:
+
+- **Toggle campagna** — disables or re-enables an entire campaign (e.g. all CDD 2024 codes). When disabled, `/assegna` rejects requests for that campaign with a `503` error. The codes are not deleted and become available again instantly upon re-enabling.
+- **Toggle taglio** — disables or re-enables a single denomination within a campaign (e.g. €25.00 CDD 2025 only). Useful to stop distributing a specific face value while keeping others active.
+- **Elimina campagna** — permanently deletes all `Disponibile` codes for that campaign. Codes already assigned (`Usato`) are preserved. The campaign button disappears from the main UI once no available codes remain.
+
+### Export
+
+Download database snapshots as formatted Excel files (.xlsx):
+
+| Report | Contents |
+|---|---|
+| **Codici Completo** | All codes with status, campaign, denomination, and linked order details (number, contact, motivation, date) |
+| **Ordini Completo** | All orders with contact, motivation, date, number of vouchers, total amount in euros, and full list of assigned codes |
+| **Riepilogo Campagne** | Aggregated counts per Tipo + Edizione + Importo: available, used, and total |
+
+### Monitoraggio
+
+View the current availability of each denomination (Tipo + Edizione + Importo). Rows below the configured threshold (`SOGLIA`, default 20) are highlighted in red. A button to send an immediate email notification appears when one or more denominations are critical.
+
+### Sistema
+
+Global emergency kill switch for the distribution system.
+
+- **Active (green)** — operators can assign voucher codes normally.
+- **Disabled (red)** — all calls to `/assegna` are rejected with a `503` error regardless of campaign; no codes can be distributed until re-enabled.
+
+Press the button to toggle between states. The state is persisted in the database (`Configurazione` table) and survives server restarts.
+
+---
+
 ## Project Structure
 
 ```
 CDD_YM/
-├── app.py              # Flask application — routes, business logic, DB access
-├── requirements.txt    # Python package dependencies
+├── app.py                  # Flask application — routes, business logic, DB access
+├── admin.py                # Flask Blueprint — admin routes (/admin, /carica, /admin/stato-codici, toggle, export, etc.)
+├── notifications.py        # Email monitoring — threshold check and SMTP sending
+├── carica_codici.py        # CLI script — bulk CSV loader (alternative to web upload)
+├── requirements.txt        # Python package dependencies (Flask, mysql-connector-python, openpyxl)
 ├── .gitignore
 └── templates/
-    ├── index.html      # Main UI (Assign / Restore / Search tabs)
-    └── guida.html      # User guide page with step-by-step instructions
+    ├── index.html          # Main UI (Assign / Restore / Search tabs)
+    ├── admin.html          # Admin panel (Carica Codici / Campagne / Export / Monitoraggio / Sistema tabs)
+    └── guida.html          # User guide page with step-by-step instructions
 ```
 
 ---
 
 ## API Reference
 
-The Flask backend exposes three JSON endpoints consumed by the frontend.
+The Flask backend exposes the following endpoints.
 
 ### POST /assegna
 
@@ -205,13 +261,19 @@ Assign voucher codes to an order.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `tipo` | `string` | Yes | Voucher type: `CDD` or `YM` |
-| `edizione` | `string` | Yes | Edition year: `2024` or `2025` |
+| `tipo` | `string` | Yes | Voucher type — any non-empty string matching a type present in the database (e.g. `CDD`, `YM`, `CartaCultura`, `18app`) |
+| `edizione` | `string` | Yes | Edition — any non-empty string matching an edition present in the database (e.g. `2024`, `2025`, `2026`) |
 | `importo` | `number` | Yes | Requested amount in euros (must be > 0) |
 | `ordine` | `string` | Yes | Order identifier |
 | `contatto` | `string` | Yes | Contact identifier |
 | `motivazione` | `string` | Yes | One of: `DNR`, `Correlato al Reso`, `Articolo Errato`, `Articolo Mancante`, `Altro` |
 | `motivazione_dettaglio` | `string` | When `motivazione` is `Altro` | Free-text description |
+
+**Error response (503)** — returned when the distribution system is disabled from the admin panel:
+
+```json
+{ "error": "Sistema di distribuzione temporaneamente disattivato" }
+```
 
 **Success response (200)**
 
@@ -287,6 +349,86 @@ Search for past orders by order ID, contact ID, or voucher code.
 
 ---
 
+### POST /admin/toggle-campagna
+
+Enable or disable all assignments for a campaign (Tipo + Edizione).
+
+**Request body**
+
+```json
+{ "tipo": "CDD", "edizione": "2025" }
+```
+
+**Success response (200)**
+
+```json
+{ "attivo": false }
+```
+
+`attivo: false` means the campaign is now disabled; `true` means it is active again.
+
+---
+
+### POST /admin/toggle-taglio
+
+Enable or disable a single denomination within a campaign.
+
+**Request body**
+
+```json
+{ "tipo": "CDD", "edizione": "2025", "importo": "25.00" }
+```
+
+**Success response (200)**
+
+```json
+{ "attivo": false }
+```
+
+---
+
+### GET /admin/export/codici
+
+Download an Excel file with all codes and their linked order details.
+
+**Response:** `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` — file download.
+
+---
+
+### GET /admin/export/ordini
+
+Download an Excel file with all orders, including assigned codes and totals.
+
+**Response:** file download (same MIME type as above).
+
+---
+
+### GET /admin/export/riepilogo
+
+Download an Excel file with aggregated counts per Tipo + Edizione + Importo.
+
+**Response:** file download.
+
+---
+
+### GET /campagne-attive
+
+Returns all voucher types and their available editions, grouped by type. Used by the frontend to build the type and edition selectors dynamically. Only types/editions with at least one `Disponibile` code are returned.
+
+**Success response (200)**
+
+```json
+{
+  "campagne": [
+    { "tipo": "CDD", "edizioni": ["2024", "2025", "2026"] },
+    { "tipo": "CartaCultura", "edizioni": ["2026"] },
+    { "tipo": "YM", "edizioni": ["2024", "2025"] }
+  ]
+}
+```
+
+---
+
 ## Database Schema
 
 ```
@@ -295,9 +437,9 @@ Codici
 │ Column               │ Type                             │ Notes    │
 ├──────────────────────┼──────────────────────────────────┼──────────┤
 │ CodiceID             │ VARCHAR(64) PK                   │ Voucher code string │
-│ Tipo                 │ ENUM('CDD','YM')                 │ Voucher programme   │
+│ Tipo                 │ VARCHAR(32)                      │ Voucher programme   │
 │ Importo              │ DECIMAL(10,2)                    │ Face value in euros │
-│ Edizione             │ VARCHAR(4)                       │ Year (2024, 2025)   │
+│ Edizione             │ VARCHAR(4)                       │ Year or edition identifier (e.g. 2024, 2025, 2026) │
 │ StatoCodice          │ ENUM('Disponibile','Usato')      │ Current status      │
 │ IdentificativoOrdine │ INT NULL                         │ FK → Ordini         │
 └──────────────────────┴──────────────────────────────────┴──────────┘
@@ -313,7 +455,22 @@ Ordini
 │ MotivazioneDettaglio │ VARCHAR(512) NULL                │ Free text for "Altro"         │
 │ DataUtilizzo         │ DATE                             │ Assignment date (CURDATE())   │
 └──────────────────────┴──────────────────────────────────┴──────────┘
+
+Configurazione
+┌────────────────┬───────────────┬────────────────────────────────────────────────┐
+│ Column         │ Type          │ Notes                                          │
+├────────────────┼───────────────┼────────────────────────────────────────────────┤
+│ chiave         │ VARCHAR(64) PK│ Setting key                                    │
+│ valore         │ VARCHAR(64)   │ Setting value                                  │
+└────────────────┴───────────────┴────────────────────────────────────────────────┘
 ```
+
+The `Configurazione` table is created automatically on first startup. It holds:
+- `distribuzione_attiva` — `'1'` (active) or `'0'` (disabled); the global kill switch
+- `disabilitato_{Tipo}_{Edizione}` — `'1'` when a campaign is disabled (e.g. `disabilitato_CDD_2025`)
+- `disabilitato_{Tipo}_{Edizione}_{importo}` — `'1'` when a single denomination is disabled (e.g. `disabilitato_CDD_2025_25.00`)
+
+Campaign and denomination keys are created on first toggle and removed automatically when a campaign is deleted.
 
 ---
 
@@ -321,7 +478,7 @@ Ordini
 
 **"Errore connessione database" on startup**
 
-Verify that MySQL is running and that the credentials in `DB_CONFIG` are correct. On macOS you can start MySQL with:
+Verify that MySQL is running and that the `MYSQL*` environment variables are set correctly (see Installation step 5). On macOS you can start MySQL with:
 
 ```bash
 brew services start mysql

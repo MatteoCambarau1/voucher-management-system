@@ -8,11 +8,7 @@ This file provides context and guidance for working on the CDD_YM codebase. Read
 
 **CDD_YM** is a proof-of-concept web application built to demonstrate a system for distributing Italian government voucher codes to beneficiaries. It was developed to present an idea to a company, which will be responsible for making the application secure and production-ready.
 
-The system manages two voucher types:
-- **CDD** — Carta del Docente (Teacher's Card)
-- **YM** — Giovani Merito (Young Merit)
-
-Each voucher type is issued in annual editions (currently 2024 and 2025). The application automates code selection, persists every assignment to a MySQL database, and provides restore and search capabilities through a browser-based interface.
+The system manages voucher types and editions **fully dynamically** — any `Tipo` value loaded into the database via CSV is automatically supported without code changes (e.g. `CDD`, `YM`, `CartaCultura`, `18app`, or any future type). The same applies to editions. The application automates code selection, persists every assignment to a MySQL database, and provides restore and search capabilities through a browser-based interface.
 
 **This is not a production system.** Security hardening, scalability, and infrastructure concerns are intentionally out of scope and will be addressed by the receiving company.
 
@@ -25,19 +21,34 @@ CDD_YM/
 ├── README.md                  # End-user installation guide and API reference
 ├── CLAUDE.md                  # This file
 └── CDD_YM/                    # Application root
-    ├── app.py                 # Flask application: routes, business logic, DB access
+    ├── app.py                 # Flask application: core routes, business logic, DB access
+    ├── admin.py               # Flask Blueprint: admin routes (/admin, /carica, /admin/stato-codici, /admin/toggle-campagna, /admin/toggle-taglio, /admin/export/*, /admin/invia-notifica)
+    ├── notifications.py       # Email monitoring: code-level threshold check and SMTP sending
+    ├── carica_codici.py       # CLI script: bulk CSV loader (alternative to web UI upload)
     ├── requirements.txt       # Pinned Python dependencies
     ├── .gitignore
+    ├── static/
+    │   ├── logo.svg           # Full horizontal logo (icon + wordmark + tagline)
+    │   └── logo-icon.svg      # Icon-only logo (scalable, for favicon/avatar use)
     └── templates/
         ├── index.html         # Main UI — Assign / Restore / Search tabs (HTML + CSS + JS)
+        ├── admin.html         # Admin panel — Carica Codici / Campagne / Export / Monitoraggio / Sistema tabs
         └── guida.html         # Operator guide page with step-by-step instructions
 ```
 
 ### Key file roles
 
-**`app.py`** is the single backend file. It contains everything: Flask route definitions, the voucher selection algorithm, database helper functions, and startup connection check. All business logic lives here.
+**`app.py`** contains the core business logic: Flask route definitions, the voucher selection algorithm, database helper functions, and startup connection check. It registers `admin_bp` from `admin.py` and calls `controlla_e_notifica()` from `notifications.py` after every successful assignment.
+
+**`admin.py`** is a Flask Blueprint (`admin_bp`) registered in `app.py`. It owns all admin-facing routes. It has its own `DB_CONFIG` copy (see Section 7 — DB_CONFIG duplication). Admin routes are accessible only via direct URL — there is no link from the main UI. It imports `openpyxl` for Excel export generation (`/admin/export/codici`, `/admin/export/ordini`, `/admin/export/riepilogo`).
+
+**`notifications.py`** contains the monitoring and email logic. It defines `SOGLIA` (threshold), `get_conteggio_codici()` (returns counts grouped by Tipo + Edizione + Importo), `controlla_e_notifica()` (checks counts, sends email if any taglio is below threshold), and `_invia_email()` (SMTP sending). Configure `EMAIL_CONFIG` here before going to production.
+
+**`carica_codici.py`** is a standalone CLI script for loading codes from a CSV file. It replicates the same validation and INSERT IGNORE logic as the web upload. Use it when terminal access is available. Run with: `python3 carica_codici.py <file.csv>`
 
 **`templates/index.html`** is a self-contained frontend. All CSS (via `<style>`) and JavaScript (via `<script>`) are inline in this file. There are no external static assets. The JS includes a complete i18n system (`TRANSLATIONS` object) for Italian and English.
+
+**`templates/admin.html`** is the admin panel UI. It has five tabs: **Carica Codici** (CSV file upload), **Campagne** (per-campaign management — view counts, toggle per campagna, toggle per taglio, delete available codes), **Export** (one-click Excel downloads for codes, orders, and campaign summary), **Monitoraggio** (per-taglio availability dashboard with manual notification trigger), and **Sistema** (distribution kill switch — ON/OFF toggle backed by the `Configurazione` table). CSS is inline and duplicated — changes must also be applied to `index.html` and `guida.html`.
 
 **`templates/guida.html`** is a static informational page for operators. It shares the same visual design as `index.html` but its CSS is duplicated inline — there is no shared stylesheet. Changes to the visual design must be applied to both files manually.
 
@@ -86,6 +97,7 @@ The algorithm does not guarantee a globally optimal combination in all cases, bu
 |---|---|---|
 | Backend | Python / Flask | Flask 3.0.0 |
 | Database driver | mysql-connector-python | 8.2.0 |
+| Excel generation | openpyxl | 3.1.2 |
 | Database | MySQL | 8.0+ |
 | Frontend | Vanilla HTML/CSS/JavaScript | No framework |
 | Fonts | Google Fonts (DM Sans, Playfair Display) | CDN |
@@ -98,16 +110,16 @@ Python dependencies are pinned exactly in `requirements.txt`. Do not add new dep
 
 ## 5. Database Schema
 
-The database is named `CDD_YM` and contains two tables.
+The database is named `CDD_YM` and contains three tables.
 
 ### `Codici` — one row per physical voucher code
 
 | Column | Type | Notes |
 |---|---|---|
 | `CodiceID` | `VARCHAR(64)` PK | The voucher code string (e.g. `AB12-CD34-EF56`) |
-| `Tipo` | `ENUM('CDD', 'YM')` | Voucher programme |
+| `Tipo` | `VARCHAR(32)` | Voucher programme — any non-empty string (e.g. `CDD`, `YM`, `CartaCultura`, `18app`) |
 | `Importo` | `DECIMAL(10,2)` | Face value in euros — always use DECIMAL, never FLOAT |
-| `Edizione` | `VARCHAR(4)` | Year string: `'2024'`, `'2025'` |
+| `Edizione` | `VARCHAR(4)` | Edition identifier — any non-empty string (e.g. `'2024'`, `'2025'`, `'2026'`) |
 | `StatoCodice` | `ENUM('Disponibile', 'Usato')` | Current availability status |
 | `IdentificativoOrdine` | `INT NULL` | FK to `Ordini.IdentificativoOrdine`; NULL when available |
 
@@ -122,17 +134,35 @@ The database is named `CDD_YM` and contains two tables.
 | `MotivazioneDettaglio` | `VARCHAR(512)` NULL | Free text, only present when `Motivazione = 'Altro'` |
 | `DataUtilizzo` | `DATE` | Assignment date, always set via `CURDATE()` |
 
+### `Configurazione` — key/value settings table
+
+| Column | Type | Notes |
+|---|---|---|
+| `chiave` | `VARCHAR(64)` PK | Setting key |
+| `valore` | `VARCHAR(64)` | Setting value |
+
+Holds multiple rows:
+- `distribuzione_attiva` — `'1'` (active) or `'0'` (disabled); created automatically by `ensure_configurazione()` on first startup.
+- `disabilitato_{Tipo}_{Edizione}` — `'1'` when a campaign is disabled (e.g. `disabilitato_CDD_2025`).
+- `disabilitato_{Tipo}_{Edizione}_{importo}` — `'1'` when a single denomination is disabled (e.g. `disabilitato_CDD_2025_25.00`).
+
+Campaign and taglio keys are created on first toggle and removed automatically when a campaign is deleted via `elimina-campagna`. No manual SQL needed.
+
 ### Relationship
 
-`Codici.IdentificativoOrdine` is a soft foreign key to `Ordini`. When a restore operation runs, it sets `IdentificativoOrdine = NULL` on the restored codes. The `Ordini` row is intentionally kept for audit purposes — restore operations do not delete order records.
+`Codici.IdentificativoOrdine` is a soft foreign key to `Ordini`. When a restore operation runs, it sets codes back to `'Disponibile'`, clears `IdentificativoOrdine`, and **deletes the corresponding `Ordini` record**. Restore is used exclusively to correct erroneous assignments — the order record is intentionally removed so the assignment leaves no trace.
 
 ---
 
 ## 6. Code Conventions
 
-### Python (`app.py`)
+### Python (`app.py`, `admin.py`, `notifications.py`)
 
 **Naming**: functions use `snake_case` in Italian (e.g. `calcola_codici_necessari`, `marca_codici_usati`, `crea_ordine`). Variables and database column references also use Italian names matching the schema. Maintain this consistency when adding functions.
+
+**Blueprint pattern**: admin routes live in `admin.py` as a Flask Blueprint (`admin_bp`). New admin-only features should be added there, not in `app.py`. Register new blueprints in `app.py` with `app.register_blueprint(...)`.
+
+**Notification side effect**: `/assegna` calls `controlla_e_notifica()` after every successful commit. This is a read + optional email send, and it runs synchronously in the request. Keep it fast — do not add blocking operations to `notifications.py`.
 
 **Monetary values**: always use `Decimal` for any arithmetic involving euro amounts. Convert floats immediately on input with `Decimal(str(value))`. Never perform arithmetic directly on `float` values fetched from the database — cast them first.
 
@@ -150,7 +180,7 @@ The database is named `CDD_YM` and contains two tables.
 
 **DOM building**: results are rendered by constructing HTML strings in `buildResultsHTML`, `buildAnnullaResultHTML`, and `buildCercaResultHTML`. New output sections should follow the same pattern: return an HTML string, assign it to `outputDiv.innerHTML`.
 
-**Global state**: `lang`, `tipo`, and `edizione` are module-level `let` variables tracking current UI state. They are updated by `setLang`, `selectTipo`, and `selectEdizione`. Do not read their values from the DOM — always use these variables.
+**Global state**: `lang`, `tipo`, `edizione`, and `tipiCampagne` are module-level `let` variables tracking current UI state. `tipiCampagne` is a map of `tipo → [edizioni]` populated at page load from `/campagne-attive`. They are updated by `setLang`, `selectTipo`, and `selectEdizione`. Do not read their values from the DOM — always use these variables.
 
 **Async pattern**: all three forms use the same `async/await` pattern with `fetch`. The button is disabled during the request and re-enabled in `finally`. Follow this pattern for any new form submissions.
 
@@ -176,13 +206,25 @@ Each route opens and closes its own connection manually. Connections are closed 
 
 The startup block in `__main__` opens a test connection to verify connectivity. It is separate from the request lifecycle and does not affect runtime behaviour.
 
-### Hardcoded editions and motivation values
+### Types and editions are dynamic — not hardcoded
 
-`['2024', '2025']` (edition validation, line 124) and `MOTIVAZIONI_VALIDE` (line 15) are the two places where domain values are hardcoded. Adding a new edition year or motivation requires updating both `app.py` (backend validation) and `index.html` (frontend dropdowns and translations). There is no single source of truth for these values.
+Both voucher types (e.g. `CDD`, `YM`, `CartaCultura`, `18app`) and editions (e.g. `'2024'`, `'2025'`, `'2026'`) are **fully dynamic**. The source of truth is the `Codici` table in the database. To add a new type or edition, simply upload a CSV with the new values via the admin panel — no code changes needed.
+
+The endpoint `GET /campagne-attive` (`app.py`) returns all `(Tipo, Edizione)` pairs that currently have `Disponibile` codes, grouped by tipo. `index.html` calls this on page load via `caricaCampagne()`, builds the tipo buttons dynamically, and updates the edizione buttons whenever the selected tipo changes via `aggiornaEdizioni()`. If a tipo or edition has no available codes, its button does not appear.
+
+`MOTIVAZIONI_VALIDE` (line 15 of `app.py`) is still hardcoded. Adding a new motivation requires updating both `app.py` and the `<select>` in `index.html`.
+
+### DB_CONFIG duplication
+
+`DB_CONFIG` and `get_db_connection()` are defined independently in `app.py`, `admin.py`, `notifications.py`, and `carica_codici.py`. This is intentional for PoC simplicity (each module is self-contained). All four modules already read from environment variables (`MYSQLHOST`, `MYSQLUSER`, `MYSQLPASSWORD`, `MYSQLDATABASE`, `MYSQLPORT`) with local fallbacks — so in practice only the environment needs to be updated, not the code. `carica_codici.py` is the only exception; verify it also uses env vars if you modify it. The receiving company should consolidate this into a single `config.py` if they move away from environment variables.
+
+### Email notification side effects in `/assegna`
+
+After every successful code assignment, `/assegna` calls `controlla_e_notifica()`. If the email is configured and a taglio is below `SOGLIA`, an SMTP connection is opened synchronously during the request. If the SMTP server is slow or unreachable, this will delay the response. For production, move the notification call to a background task or queue.
 
 ### CSS duplication between templates
 
-`index.html` and `guida.html` share the same CSS custom properties and base styles, but the CSS is duplicated in full in each file. When modifying colours, spacing, or typography, both files must be updated. Consider this before making visual changes.
+`index.html`, `admin.html`, and `guida.html` share the same CSS custom properties and base styles, but the CSS is duplicated in full in each file. When modifying colours, spacing, or typography, all three files must be updated. Consider this before making visual changes.
 
 ---
 
@@ -206,16 +248,46 @@ The startup block in `__main__` opens a test connection to verify connectivity. 
 
 ### Adding a new voucher type
 
-1. Update the `Tipo` ENUM in MySQL: `ALTER TABLE Codici MODIFY Tipo ENUM('CDD', 'YM', 'NEW_TYPE')`.
-2. Add `'NEW_TYPE'` to the validation list in `/assegna` (`if tipo not in ['CDD', 'YM']`).
-3. Add a new toggle button in the Tipo field group in `index.html`.
-4. Add the label and sublabel strings to both translation objects.
+No code changes required. Simply upload a CSV containing codes with the new `Tipo` value (e.g. `CartaCultura`, `18app`, or any custom string up to 32 characters) via `/admin` → tab "Carica Codici". The backend accepts any non-empty tipo. The frontend will display the new tipo button automatically on the next page load.
 
 ### Adding a new edition year
 
-1. Add the year string to the validation list in `/assegna` (`if edizione not in ['2024', '2025']`).
-2. Add a toggle button for the new year in the Edizione field group in `index.html`.
-3. Populate the `Codici` table with codes for the new edition.
+No code changes required. Simply upload a CSV containing codes with the new edition string (e.g. `2026`) via `/admin` → tab "Carica Codici". The backend accepts any non-empty edition value. The frontend will display the new edition button automatically on the next page load.
+
+### Removing an edition (campaign)
+
+Go to `/admin` → tab "Campagne". Each campaign (Tipo + Edizione) is shown with its available/used counts. Click "Elimina" and confirm. This deletes all `Disponibile` codes for that campaign and cleans up the related `Configurazione` keys. Codes already assigned (`Usato`) are preserved. The edition button disappears from the main UI automatically once no available codes remain.
+
+### Loading codes from CSV
+
+Two options are available:
+
+**Web UI (recommended for non-technical users):**
+Navigate to `/admin` → tab "Carica Codici" → select a `.csv` file → submit. The backend validates each row and runs `INSERT IGNORE`. Results (inserted / duplicates / errors) are shown on screen.
+
+**CLI (for operators with terminal access):**
+```bash
+python3 carica_codici.py codici_nuovi.csv
+```
+
+Both paths use `INSERT IGNORE`, so re-uploading a file is safe. The expected CSV columns are: `CodiceID`, `Tipo`, `Importo`, `Edizione`.
+
+### Adding an admin route
+
+1. Add the route function to `admin.py` using `@admin_bp.route(...)`.
+2. Follow the same error-response pattern as existing routes (`jsonify({'error': '...'})`, appropriate status codes).
+3. If the route needs database access, use the local `get_db_connection()` defined in `admin.py`.
+4. Add a corresponding section in `admin.html` if UI is needed.
+
+### Configuring email notifications
+
+Open `notifications.py` and fill in `EMAIL_CONFIG`:
+- `smtp_host` / `smtp_port`: e.g. `smtp.gmail.com` / `587` for Gmail, `smtp.office365.com` / `587` for Outlook
+- `username` / `password`: sender credentials (use an App Password for Gmail)
+- `destinatario`: the maintainer's email address
+
+The threshold is `SOGLIA = 20` at the top of the file. Change it to adjust the alert level.
+Notifications are per taglio (Tipo + Edizione + Importo). Each denomination is checked independently.
 
 ### Extending the search
 
@@ -227,7 +299,7 @@ The `/cerca` endpoint executes a UNION query that searches `Ordini.Ordine`, `Ord
 
 **Do not use `float` for monetary calculations.** Any arithmetic on euro amounts that bypasses `Decimal` will introduce rounding errors. This will cause the algorithm to select incorrect code combinations.
 
-**Do not delete `Ordini` rows during a restore operation.** The restore endpoint (`/annulla`) sets codes back to `'Disponibile'` and clears `IdentificativoOrdine`, but intentionally leaves the `Ordini` record intact. Deleting order records breaks the audit trail. If you add a bulk-restore or admin feature, maintain this constraint.
+**Do not preserve `Ordini` rows after a restore operation.** The restore endpoint (`/annulla`) is used exclusively to correct erroneous assignments. It sets codes back to `'Disponibile'`, clears `IdentificativoOrdine`, and deletes the `Ordini` record — so the mistaken assignment leaves no trace in the database.
 
 **Do not change the `error` key name in error responses.** The frontend checks `data.error` in every fetch handler. Renaming it to `message`, `detail`, or anything else will break all error display in the UI silently (no errors shown, no feedback to the operator).
 
@@ -237,6 +309,24 @@ The `/cerca` endpoint executes a UNION query that searches `Ordini.Ordine`, `Ord
 
 **Do not add Flask-Login, sessions, or authentication middleware.** This is a proof-of-concept with no authentication layer. Adding auth is the responsibility of the receiving company and should be designed as part of a broader security architecture, not bolted on top of the existing routes.
 
+**Do not expose `/admin` publicly without authentication.** The admin panel is currently protected only by URL obscurity. Before deploying, the receiving company must add proper access control (at minimum HTTP Basic Auth or a reverse-proxy rule).
+
+**Do not consolidate DB_CONFIG into a single file without updating all four consumers.** `app.py`, `admin.py`, `notifications.py`, and `carica_codici.py` each define their own `DB_CONFIG`. If you create a shared `config.py`, update all four import sites and verify startup still works.
+
 ---
 
-*Last updated: March 2026 — Matteo Cambarau*
+*Last updated: April 2026 — Matteo Cambarau*
+
+---
+
+## 10. Migration Notes
+
+### Branch `differenziazioneCampagna` — April 2026
+
+The `Tipo` column was changed from `ENUM('CDD', 'YM')` to `VARCHAR(32)` to support fully dynamic voucher types. Run the following SQL once on any existing database before deploying:
+
+```sql
+ALTER TABLE Codici MODIFY Tipo VARCHAR(32) NOT NULL;
+```
+
+All hardcoded type validations (`if tipo not in ('CDD', 'YM')`) were removed from `app.py`, `admin.py`, and `carica_codici.py`. The `/campagne-attive` endpoint now returns `{ "campagne": [{"tipo": ..., "edizioni": [...]}] }` instead of `{ "edizioni": [...] }`. The frontend function `caricaEdizioni()` was replaced by `caricaCampagne()` + `aggiornaEdizioni()`.
