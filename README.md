@@ -1,13 +1,13 @@
 # VoucherManagementSystem — Voucher Code Distribution System
 
-A web application for managing and distributing Italian government voucher codes (Carta del Docente and Giovani Merito) to beneficiaries. The system automates code selection, handles order tracking, and provides restore and search capabilities through a clean browser-based interface.
+A web application for managing and distributing voucher codes to beneficiaries. The system automates code selection, handles order tracking, and provides restore and search capabilities through a clean browser-based interface.
 
 ---
 
 ## Key Features
 
 - **Automated code selection** — given a requested amount, the system applies a greedy algorithm to pick the optimal combination of available voucher codes, rounding up to the nearest €0.50 increment when an exact match is unavailable
-- **Fully dynamic voucher types and editions** — the system supports any combination of voucher type and edition without code changes; loading a CSV with a new `Tipo` (e.g. `CartaCultura`, `18app`) automatically makes it selectable in the UI
+- **Fully dynamic voucher types and editions** — the system supports any combination of voucher type and edition without code changes; loading a CSV with a new `Tipo` (e.g. `Voucher3`, `Voucher4`) automatically makes it selectable in the UI
 - **Order tracking** — every assignment is persisted to a MySQL database with the associated order ID, contact ID, motivation, and date
 - **Code restore** — previously assigned codes can be reverted to "Available" status, detaching them from their order record
 - **Search** — look up past assignments by order number, contact ID, or individual voucher code
@@ -44,8 +44,8 @@ cd VoucherManagementSystem
 
 ```bash
 python3 -m venv venv
-source venv/bin/activate   # macOS / Linux
-venv\Scripts\activate      # Windows
+source venv/bin/activate # macOS / Linux
+venv\Scripts\activate # Windows
 ```
 
 **3. Install Python dependencies**
@@ -72,21 +72,21 @@ CREATE DATABASE VoucherManagementSystem CHARACTER SET utf8mb4 COLLATE utf8mb4_un
 USE VoucherManagementSystem;
 
 CREATE TABLE Codici (
-    CodiceID        VARCHAR(64)  NOT NULL PRIMARY KEY,
-    Tipo            VARCHAR(32)  NOT NULL,
-    Importo         DECIMAL(10, 2) NOT NULL,
-    Edizione        VARCHAR(4)   NOT NULL,
-    StatoCodice     ENUM('Disponibile', 'Usato') NOT NULL DEFAULT 'Disponibile',
-    IdentificativoOrdine INT DEFAULT NULL
+ CodiceID VARCHAR(64) NOT NULL PRIMARY KEY,
+ Tipo VARCHAR(32) NOT NULL,
+ Importo DECIMAL(10, 2) NOT NULL,
+ Edizione VARCHAR(4) NOT NULL,
+ StatoCodice ENUM('Disponibile', 'Usato') NOT NULL DEFAULT 'Disponibile',
+ IdentificativoOrdine INT DEFAULT NULL
 );
 
 CREATE TABLE Ordini (
-    IdentificativoOrdine INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    Ordine               VARCHAR(128) NOT NULL,
-    Contatto             VARCHAR(128) NOT NULL,
-    Motivazione          VARCHAR(64)  NOT NULL,
-    MotivazioneDettaglio VARCHAR(512) DEFAULT NULL,
-    DataUtilizzo         DATE         NOT NULL
+ IdentificativoOrdine INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ Ordine VARCHAR(128) NOT NULL,
+ Contatto VARCHAR(128) NOT NULL,
+ Motivazione VARCHAR(64) NOT NULL,
+ MotivazioneDettaglio VARCHAR(512) DEFAULT NULL,
+ DataUtilizzo DATE NOT NULL
 );
 ```
 
@@ -137,7 +137,7 @@ The interface is organised into three tabs.
 
 Use this tab to distribute voucher codes to a beneficiary.
 
-1. Select the **voucher type** from the available buttons — populated dynamically from the database (e.g. Voucher1, Voucher2, CartaCultura, 18app).
+1. Select the **voucher type** from the available buttons — populated dynamically from the database (e.g. Voucher1, Voucher2, Voucher3, Voucher4).
 2. Select the **edition** — updates automatically to show only editions available for the selected type.
 3. Enter the **requested amount** in euros (e.g. `47.30`).
 4. Enter the **Order ID** and **Contact ID** from your order management system.
@@ -223,16 +223,16 @@ Press the button to toggle between states. The state is persisted in the databas
 
 ```
 VoucherManagementSystem/
-├── app.py                  # Flask application — routes, business logic, DB access
-├── admin.py                # Flask Blueprint — admin routes (/admin, /carica, /admin/stato-codici, toggle, export, etc.)
-├── notifications.py        # Email monitoring — threshold check and SMTP sending
-├── carica_codici.py        # CLI script — bulk CSV loader (alternative to web upload)
-├── requirements.txt        # Python package dependencies (Flask, mysql-connector-python, openpyxl)
+├── app.py # Flask application — routes, business logic, DB access
+├── admin.py # Flask Blueprint — admin routes (/admin, /carica, /admin/stato-codici, toggle, export, etc.)
+├── notifications.py # Email monitoring — threshold check and SMTP sending
+├── carica_codici.py # CLI script — bulk CSV loader (alternative to web upload)
+├── requirements.txt # Python package dependencies (Flask, mysql-connector-python, openpyxl)
 ├── .gitignore
 └── templates/
-    ├── index.html          # Main UI (Assign / Restore / Search tabs)
-    ├── admin.html          # Admin panel (Carica Codici / Campagne / Export / Monitoraggio / Sistema tabs)
-    └── guida.html          # User guide page with step-by-step instructions
+ ├── index.html # Main UI (Assign / Restore / Search tabs)
+ ├── admin.html # Admin panel (Carica Codici / Campagne / Export / Monitoraggio / Sistema tabs)
+ └── guida.html # User guide page with step-by-step instructions
 ```
 
 ---
@@ -249,19 +249,19 @@ Assign voucher codes to an order.
 
 ```json
 {
-  "tipo": "Voucher1",
-  "edizione": "2025",
-  "importo": 47.30,
-  "ordine": "404-XXXXXXXX",
-  "contatto": "AX2XXXXXXX",
-  "motivazione": "DNR",
-  "motivazione_dettaglio": ""
+ "tipo": "Voucher1",
+ "edizione": "2025",
+ "importo": 47.30,
+ "ordine": "404-XXXXXXXX",
+ "contatto": "AX2XXXXXXX",
+ "motivazione": "DNR",
+ "motivazione_dettaglio": ""
 }
 ```
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `tipo` | `string` | Yes | Voucher type — any non-empty string matching a type present in the database (e.g. `Voucher1`, `Voucher2`, `CartaCultura`, `18app`) |
+| `tipo` | `string` | Yes | Voucher type — any non-empty string matching a type present in the database (e.g. `Voucher1`, `Voucher2`, `Voucher3`, `Voucher4`) |
 | `edizione` | `string` | Yes | Edition — any non-empty string matching an edition present in the database (e.g. `2024`, `2025`, `2026`) |
 | `importo` | `number` | Yes | Requested amount in euros (must be > 0) |
 | `ordine` | `string` | Yes | Order identifier |
@@ -279,13 +279,13 @@ Assign voucher codes to an order.
 
 ```json
 {
-  "codici": [
-    { "codice_id": "AB12-CD34-EF56", "tipo": "Voucher1", "importo": 30.00, "edizione": "2025" },
-    { "codice_id": "GH78-IJ90-KL12", "tipo": "Voucher1", "importo": 17.50, "edizione": "2025" }
-  ],
-  "totale": 47.50,
-  "importo_richiesto": 47.30,
-  "identificativo_ordine": 42
+ "codici": [
+ { "codice_id": "AB12-CD34-EF56", "tipo": "Voucher1", "importo": 30.00, "edizione": "2025" },
+ { "codice_id": "GH78-IJ90-KL12", "tipo": "Voucher1", "importo": 17.50, "edizione": "2025" }
+ ],
+ "totale": 47.50,
+ "importo_richiesto": 47.30,
+ "identificativo_ordine": 42
 }
 ```
 
@@ -299,7 +299,7 @@ Restore one or more voucher codes to "Available" status.
 
 ```json
 {
-  "codici": ["AB12-CD34-EF56", "GH78-IJ90-KL12"]
+ "codici": ["AB12-CD34-EF56", "GH78-IJ90-KL12"]
 }
 ```
 
@@ -307,9 +307,9 @@ Restore one or more voucher codes to "Available" status.
 
 ```json
 {
-  "ripristinati": 2,
-  "codici_ripristinati": ["AB12-CD34-EF56", "GH78-IJ90-KL12"],
-  "non_trovati": []
+ "ripristinati": 2,
+ "codici_ripristinati": ["AB12-CD34-EF56", "GH78-IJ90-KL12"],
+ "non_trovati": []
 }
 ```
 
@@ -323,7 +323,7 @@ Search for past orders by order ID, contact ID, or voucher code.
 
 ```json
 {
-  "query": "404-XXXXXXXX"
+ "query": "404-XXXXXXXX"
 }
 ```
 
@@ -331,19 +331,19 @@ Search for past orders by order ID, contact ID, or voucher code.
 
 ```json
 {
-  "ordini": [
-    {
-      "id": 42,
-      "ordine": "404-XXXXXXXX",
-      "contatto": "AX2XXXXXXX",
-      "motivazione": "DNR",
-      "motivazione_dettaglio": null,
-      "data": "2025-03-07",
-      "codici": [
-        { "codice_id": "AB12-CD34-EF56", "tipo": "Voucher1", "importo": 30.00, "edizione": "2025", "stato": "Usato" }
-      ]
-    }
-  ]
+ "ordini": [
+ {
+ "id": 42,
+ "ordine": "404-XXXXXXXX",
+ "contatto": "AX2XXXXXXX",
+ "motivazione": "DNR",
+ "motivazione_dettaglio": null,
+ "data": "2025-03-07",
+ "codici": [
+ { "codice_id": "AB12-CD34-EF56", "tipo": "Voucher1", "importo": 30.00, "edizione": "2025", "stato": "Usato" }
+ ]
+ }
+ ]
 }
 ```
 
@@ -419,11 +419,11 @@ Returns all voucher types and their available editions, grouped by type. Used by
 
 ```json
 {
-  "campagne": [
-    { "tipo": "Voucher1", "edizioni": ["2024", "2025", "2026"] },
-    { "tipo": "CartaCultura", "edizioni": ["2026"] },
-    { "tipo": "Voucher2", "edizioni": ["2024", "2025"] }
-  ]
+ "campagne": [
+ { "tipo": "Voucher1", "edizioni": ["2024", "2025", "2026"] },
+ { "tipo": "Voucher3", "edizioni": ["2026"] },
+ { "tipo": "Voucher2", "edizioni": ["2024", "2025"] }
+ ]
 }
 ```
 
@@ -434,34 +434,34 @@ Returns all voucher types and their available editions, grouped by type. Used by
 ```
 Codici
 ┌──────────────────────┬──────────────────────────────────┬──────────┐
-│ Column               │ Type                             │ Notes    │
+│ Column │ Type │ Notes │
 ├──────────────────────┼──────────────────────────────────┼──────────┤
-│ CodiceID             │ VARCHAR(64) PK                   │ Voucher code string │
-│ Tipo                 │ VARCHAR(32)                      │ Voucher programme   │
-│ Importo              │ DECIMAL(10,2)                    │ Face value in euros │
-│ Edizione             │ VARCHAR(4)                       │ Year or edition identifier (e.g. 2024, 2025, 2026) │
-│ StatoCodice          │ ENUM('Disponibile','Usato')      │ Current status      │
-│ IdentificativoOrdine │ INT NULL                         │ FK → Ordini         │
+│ CodiceID │ VARCHAR(64) PK │ Voucher code string │
+│ Tipo │ VARCHAR(32) │ Voucher programme │
+│ Importo │ DECIMAL(10,2) │ Face value in euros │
+│ Edizione │ VARCHAR(4) │ Year or edition identifier (e.g. 2024, 2025, 2026) │
+│ StatoCodice │ ENUM('Disponibile','Usato') │ Current status │
+│ IdentificativoOrdine │ INT NULL │ FK → Ordini │
 └──────────────────────┴──────────────────────────────────┴──────────┘
 
 Ordini
 ┌──────────────────────┬──────────────────────────────────┬──────────┐
-│ Column               │ Type                             │ Notes    │
+│ Column │ Type │ Notes │
 ├──────────────────────┼──────────────────────────────────┼──────────┤
-│ IdentificativoOrdine │ INT AUTO_INCREMENT PK            │          │
-│ Ordine               │ VARCHAR(128)                     │ Order ID from external system │
-│ Contatto             │ VARCHAR(128)                     │ Contact ID                    │
-│ Motivazione          │ VARCHAR(64)                      │ Assignment reason             │
-│ MotivazioneDettaglio │ VARCHAR(512) NULL                │ Free text for "Altro"         │
-│ DataUtilizzo         │ DATE                             │ Assignment date (CURDATE())   │
+│ IdentificativoOrdine │ INT AUTO_INCREMENT PK │ │
+│ Ordine │ VARCHAR(128) │ Order ID from external system │
+│ Contatto │ VARCHAR(128) │ Contact ID │
+│ Motivazione │ VARCHAR(64) │ Assignment reason │
+│ MotivazioneDettaglio │ VARCHAR(512) NULL │ Free text for "Altro" │
+│ DataUtilizzo │ DATE │ Assignment date (CURDATE()) │
 └──────────────────────┴──────────────────────────────────┴──────────┘
 
 Configurazione
 ┌────────────────┬───────────────┬────────────────────────────────────────────────┐
-│ Column         │ Type          │ Notes                                          │
+│ Column │ Type │ Notes │
 ├────────────────┼───────────────┼────────────────────────────────────────────────┤
-│ chiave         │ VARCHAR(64) PK│ Setting key                                    │
-│ valore         │ VARCHAR(64)   │ Setting value                                  │
+│ chiave │ VARCHAR(64) PK│ Setting key │
+│ valore │ VARCHAR(64) │ Setting value │
 └────────────────┴───────────────┴────────────────────────────────────────────────┘
 ```
 

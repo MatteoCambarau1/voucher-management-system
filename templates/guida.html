@@ -1,721 +1,721 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guida — Sistema Distribuzione Codici</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #fffaf6;
-            --surface: #ffffff;
-            --border: #f0dece;
-            --text: #1a1008;
-            --text-muted: #9c8272;
-            --accent: #f97316;
-            --accent-2: #c2440a;
-            --accent-glow: rgba(249, 115, 22, 0.18);
-            --accent-soft: rgba(249, 115, 22, 0.08);
-            --success: #16a34a;
-            --success-bg: rgba(22, 163, 74, 0.07);
-            --radius: 12px;
-        }
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Guida — Sistema Distribuzione Codici</title>
+ <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+ <style>
+ :root {
+ --bg: #fffaf6;
+ --surface: #ffffff;
+ --border: #f0dece;
+ --text: #1a1008;
+ --text-muted: #9c8272;
+ --accent: #f97316;
+ --accent-2: #c2440a;
+ --accent-glow: rgba(249, 115, 22, 0.18);
+ --accent-soft: rgba(249, 115, 22, 0.08);
+ --success: #16a34a;
+ --success-bg: rgba(22, 163, 74, 0.07);
+ --radius: 12px;
+ }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+ * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            padding: 48px 24px 64px;
-            position: relative;
-            overflow-x: hidden;
-        }
+ body {
+ font-family: 'DM Sans', sans-serif;
+ background: var(--bg);
+ color: var(--text);
+ min-height: 100vh;
+ padding: 48px 24px 64px;
+ position: relative;
+ overflow-x: hidden;
+ }
 
-        body::before {
-            content: '';
-            position: fixed;
-            top: -40%; left: -20%; width: 80%; height: 80%;
-            background: radial-gradient(ellipse, rgba(249, 115, 22, 0.07) 0%, transparent 70%);
-            pointer-events: none;
-        }
+ body::before {
+ content: '';
+ position: fixed;
+ top: -40%; left: -20%; width: 80%; height: 80%;
+ background: radial-gradient(ellipse, rgba(249, 115, 22, 0.07) 0%, transparent 70%);
+ pointer-events: none;
+ }
 
-        .lang-switch {
-            position: fixed;
-            top: 20px; right: 20px;
-            display: flex; gap: 4px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 4px;
-            z-index: 100;
-            box-shadow: 0 2px 12px rgba(26,16,8,0.06);
-        }
-        .lang-btn {
-            padding: 5px 14px; border-radius: 20px; border: none;
-            background: transparent; color: var(--text-muted);
-            font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
-            cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
-        }
-        .lang-btn.active { background: var(--text); color: #fff; }
-        .lang-btn:not(.active):hover { color: var(--text); }
+ .lang-switch {
+ position: fixed;
+ top: 20px; right: 20px;
+ display: flex; gap: 4px;
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: 24px;
+ padding: 4px;
+ z-index: 100;
+ box-shadow: 0 2px 12px rgba(26,16,8,0.06);
+ }
+ .lang-btn {
+ padding: 5px 14px; border-radius: 20px; border: none;
+ background: transparent; color: var(--text-muted);
+ font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+ cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
+ }
+ .lang-btn.active { background: var(--text); color: #fff; }
+ .lang-btn:not(.active):hover { color: var(--text); }
 
-        .page { max-width: 680px; margin: 0 auto; position: relative; z-index: 1; }
+ .page { max-width: 680px; margin: 0 auto; position: relative; z-index: 1; }
 
-        .back-link {
-            display: inline-flex; align-items: center; gap: 6px;
-            color: var(--text-muted); font-size: 13px; text-decoration: none;
-            margin-bottom: 40px; transition: color 0.2s;
-        }
-        .back-link:hover { color: var(--accent); }
+ .back-link {
+ display: inline-flex; align-items: center; gap: 6px;
+ color: var(--text-muted); font-size: 13px; text-decoration: none;
+ margin-bottom: 40px; transition: color 0.2s;
+ }
+ .back-link:hover { color: var(--accent); }
 
-        .page-header { margin-bottom: 48px; }
-        .page-header .badge {
-            display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
-            text-transform: uppercase; color: var(--accent); background: var(--accent-soft);
-            padding: 6px 14px; border-radius: 20px; margin-bottom: 14px;
-            border: 1px solid rgba(249, 115, 22, 0.2);
-        }
-        .page-header h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 30px; font-weight: 700; line-height: 1.3; margin-bottom: 10px;
-            background: linear-gradient(135deg, #1a1008 30%, #c2440a 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-        }
-        .page-header p { color: var(--text-muted); font-size: 15px; line-height: 1.6; }
+ .page-header { margin-bottom: 48px; }
+ .page-header .badge {
+ display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+ text-transform: uppercase; color: var(--accent); background: var(--accent-soft);
+ padding: 6px 14px; border-radius: 20px; margin-bottom: 14px;
+ border: 1px solid rgba(249, 115, 22, 0.2);
+ }
+ .page-header h1 {
+ font-family: 'Playfair Display', serif;
+ font-size: 30px; font-weight: 700; line-height: 1.3; margin-bottom: 10px;
+ background: linear-gradient(135deg, #1a1008 30%, #c2440a 100%);
+ -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+ }
+ .page-header p { color: var(--text-muted); font-size: 15px; line-height: 1.6; }
 
-        /* Sections */
-        .section { margin-bottom: 52px; }
-        .section-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 20px; font-weight: 700; margin-bottom: 6px;
-        }
-        .section-desc { color: var(--text-muted); font-size: 14px; margin-bottom: 28px; line-height: 1.6; }
+ /* Sections */
+ .section { margin-bottom: 52px; }
+ .section-title {
+ font-family: 'Playfair Display', serif;
+ font-size: 20px; font-weight: 700; margin-bottom: 6px;
+ }
+ .section-desc { color: var(--text-muted); font-size: 14px; margin-bottom: 28px; line-height: 1.6; }
 
-        /* Steps */
-        .steps { display: flex; flex-direction: column; gap: 20px; }
-        .step {
-            display: grid; grid-template-columns: 40px 1fr; gap: 16px; align-items: start;
-        }
-        .step-num {
-            width: 40px; height: 40px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            color: #fff; font-weight: 700; font-size: 15px;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; box-shadow: 0 4px 12px rgba(249,115,22,0.3);
-        }
-        .step-content { padding-top: 8px; }
-        .step-content h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
-        .step-content p { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px; }
+ /* Steps */
+ .steps { display: flex; flex-direction: column; gap: 20px; }
+ .step {
+ display: grid; grid-template-columns: 40px 1fr; gap: 16px; align-items: start;
+ }
+ .step-num {
+ width: 40px; height: 40px; border-radius: 50%;
+ background: linear-gradient(135deg, var(--accent), var(--accent-2));
+ color: #fff; font-weight: 700; font-size: 15px;
+ display: flex; align-items: center; justify-content: center;
+ flex-shrink: 0; box-shadow: 0 4px 12px rgba(249,115,22,0.3);
+ }
+ .step-content { padding-top: 8px; }
+ .step-content h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+ .step-content p { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px; }
 
-        /* UI Mockup */
-        .mockup {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
-            box-shadow: 0 2px 20px rgba(249,115,22,0.05);
-            margin-top: 4px;
-        }
-        .mockup-label {
-            font-size: 10px; font-weight: 700; letter-spacing: 0.6px;
-            text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;
-        }
-        .mockup-toggles { display: flex; gap: 8px; }
-        .mockup-btn {
-            flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 8px;
-            text-align: center; font-size: 13px; font-weight: 600; color: var(--text-muted);
-        }
-        .mockup-btn.on {
-            border-color: var(--accent); color: var(--accent);
-            background: var(--accent-soft);
-            box-shadow: 0 0 0 1px var(--accent);
-        }
-        .mockup-btn .sub { display: block; font-size: 10px; font-weight: 400; margin-top: 2px; opacity: 0.7; }
-        .mockup-input {
-            width: 100%; padding: 11px 14px; border: 1px solid var(--border);
-            border-radius: 8px; font-size: 14px; color: #d9c4b4;
-            background: transparent; position: relative;
-        }
-        .mockup-input.focused { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); color: var(--text); }
-        .mockup-input-wrap { position: relative; }
-        .mockup-unit { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-weight: 700; font-size: 13px; }
-        .mockup-submit {
-            width: 100%; padding: 13px; border-radius: 8px; text-align: center;
-            background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            color: #fff; font-weight: 700; font-size: 14px;
-            box-shadow: 0 4px 16px rgba(249,115,22,0.35);
-        }
-        .mockup-gap { height: 12px; }
-        .mockup-code-box {
-            background: #fdf6f0; border: 1px solid var(--border); border-radius: 8px;
-            padding: 14px 16px; font-family: 'SF Mono', monospace; font-size: 12.5px;
-            line-height: 2; position: relative;
-        }
-        .mockup-code-box .eur { color: var(--accent); font-weight: 700; }
-        .mockup-copy {
-            position: absolute; top: 8px; right: 8px;
-            padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px;
-            background: var(--surface); color: var(--text-muted); font-size: 11px; font-weight: 600;
-        }
-        .mockup-success {
-            padding: 12px 14px; background: var(--success-bg);
-            border: 1px solid rgba(22,163,74,0.12); border-radius: 8px;
-            font-size: 12px; color: var(--success); text-align: center; font-weight: 500;
-        }
-        .mockup-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
-        .mockup-tab {
-            flex: 1; padding: 9px 0; font-size: 13px; font-weight: 600; text-align: center;
-            color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px;
-        }
-        .mockup-tab.on { color: var(--accent); border-bottom-color: var(--accent); }
-        .mockup-textarea {
-            width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px;
-            font-family: 'SF Mono', monospace; font-size: 12px; color: var(--text);
-            background: transparent; line-height: 1.8; min-height: 80px;
-        }
-        .mockup-hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
-        .mockup-select {
-            width: 100%; padding: 11px 40px 11px 14px; border: 1px solid var(--border);
-            border-radius: 8px; font-size: 14px; color: #d9c4b4; background: transparent;
-            position: relative;
-        }
-        .mockup-select.chosen { color: var(--text); border-color: var(--accent); }
-        .mockup-select-wrap { position: relative; }
-        .mockup-select-wrap::after {
-            content: '▾'; position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
-            color: var(--text-muted); font-size: 13px; pointer-events: none;
-        }
-        .mockup-select-alert {
-            margin-top: 8px; padding: 10px 14px;
-            background: rgba(249,115,22,0.06); border: 1px solid rgba(249,115,22,0.25);
-            border-radius: 8px; font-size: 12px; color: var(--accent-2); line-height: 1.5;
-        }
-        .mockup-warning {
-            padding: 10px 14px; background: rgba(249,115,22,0.06);
-            border: 1px solid rgba(249,115,22,0.2); border-radius: 8px;
-            font-size: 12px; color: var(--accent-2); text-align: center;
-        }
+ /* UI Mockup */
+ .mockup {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--radius);
+ padding: 20px;
+ box-shadow: 0 2px 20px rgba(249,115,22,0.05);
+ margin-top: 4px;
+ }
+ .mockup-label {
+ font-size: 10px; font-weight: 700; letter-spacing: 0.6px;
+ text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;
+ }
+ .mockup-toggles { display: flex; gap: 8px; }
+ .mockup-btn {
+ flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+ text-align: center; font-size: 13px; font-weight: 600; color: var(--text-muted);
+ }
+ .mockup-btn.on {
+ border-color: var(--accent); color: var(--accent);
+ background: var(--accent-soft);
+ box-shadow: 0 0 0 1px var(--accent);
+ }
+ .mockup-btn .sub { display: block; font-size: 10px; font-weight: 400; margin-top: 2px; opacity: 0.7; }
+ .mockup-input {
+ width: 100%; padding: 11px 14px; border: 1px solid var(--border);
+ border-radius: 8px; font-size: 14px; color: #d9c4b4;
+ background: transparent; position: relative;
+ }
+ .mockup-input.focused { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); color: var(--text); }
+ .mockup-input-wrap { position: relative; }
+ .mockup-unit { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-weight: 700; font-size: 13px; }
+ .mockup-submit {
+ width: 100%; padding: 13px; border-radius: 8px; text-align: center;
+ background: linear-gradient(135deg, var(--accent), var(--accent-2));
+ color: #fff; font-weight: 700; font-size: 14px;
+ box-shadow: 0 4px 16px rgba(249,115,22,0.35);
+ }
+ .mockup-gap { height: 12px; }
+ .mockup-code-box {
+ background: #fdf6f0; border: 1px solid var(--border); border-radius: 8px;
+ padding: 14px 16px; font-family: 'SF Mono', monospace; font-size: 12.5px;
+ line-height: 2; position: relative;
+ }
+ .mockup-code-box .eur { color: var(--accent); font-weight: 700; }
+ .mockup-copy {
+ position: absolute; top: 8px; right: 8px;
+ padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px;
+ background: var(--surface); color: var(--text-muted); font-size: 11px; font-weight: 600;
+ }
+ .mockup-success {
+ padding: 12px 14px; background: var(--success-bg);
+ border: 1px solid rgba(22,163,74,0.12); border-radius: 8px;
+ font-size: 12px; color: var(--success); text-align: center; font-weight: 500;
+ }
+ .mockup-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+ .mockup-tab {
+ flex: 1; padding: 9px 0; font-size: 13px; font-weight: 600; text-align: center;
+ color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px;
+ }
+ .mockup-tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+ .mockup-textarea {
+ width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px;
+ font-family: 'SF Mono', monospace; font-size: 12px; color: var(--text);
+ background: transparent; line-height: 1.8; min-height: 80px;
+ }
+ .mockup-hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+ .mockup-select {
+ width: 100%; padding: 11px 40px 11px 14px; border: 1px solid var(--border);
+ border-radius: 8px; font-size: 14px; color: #d9c4b4; background: transparent;
+ position: relative;
+ }
+ .mockup-select.chosen { color: var(--text); border-color: var(--accent); }
+ .mockup-select-wrap { position: relative; }
+ .mockup-select-wrap::after {
+ content: '▾'; position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+ color: var(--text-muted); font-size: 13px; pointer-events: none;
+ }
+ .mockup-select-alert {
+ margin-top: 8px; padding: 10px 14px;
+ background: rgba(249,115,22,0.06); border: 1px solid rgba(249,115,22,0.25);
+ border-radius: 8px; font-size: 12px; color: var(--accent-2); line-height: 1.5;
+ }
+ .mockup-warning {
+ padding: 10px 14px; background: rgba(249,115,22,0.06);
+ border: 1px solid rgba(249,115,22,0.2); border-radius: 8px;
+ font-size: 12px; color: var(--accent-2); text-align: center;
+ }
 
-        /* Note box */
-        .note {
-            padding: 16px 20px; background: var(--accent-soft);
-            border: 1px solid rgba(249,115,22,0.2); border-radius: var(--radius);
-            font-size: 13px; color: var(--accent-2); line-height: 1.7;
-            margin-top: 12px;
-        }
-        .note strong { color: var(--accent-2); }
+ /* Note box */
+ .note {
+ padding: 16px 20px; background: var(--accent-soft);
+ border: 1px solid rgba(249,115,22,0.2); border-radius: var(--radius);
+ font-size: 13px; color: var(--accent-2); line-height: 1.7;
+ margin-top: 12px;
+ }
+ .note strong { color: var(--accent-2); }
 
-        /* Info table */
-        .info-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
-        .info-table th {
-            text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 700;
-            letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted);
-            border-bottom: 1px solid var(--border);
-        }
-        .info-table td { padding: 12px 14px; border-bottom: 1px solid #faf0e6; }
-        .info-table tr:last-child td { border-bottom: none; }
-        .tag {
-            display: inline-block; padding: 2px 8px; border-radius: 4px;
-            font-size: 11px; font-weight: 700; font-family: monospace;
-            background: var(--accent-soft); color: var(--accent); border: 1px solid rgba(249,115,22,0.2);
-        }
+ /* Info table */
+ .info-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+ .info-table th {
+ text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 700;
+ letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted);
+ border-bottom: 1px solid var(--border);
+ }
+ .info-table td { padding: 12px 14px; border-bottom: 1px solid #faf0e6; }
+ .info-table tr:last-child td { border-bottom: none; }
+ .tag {
+ display: inline-block; padding: 2px 8px; border-radius: 4px;
+ font-size: 11px; font-weight: 700; font-family: monospace;
+ background: var(--accent-soft); color: var(--accent); border: 1px solid rgba(249,115,22,0.2);
+ }
 
-        .divider { height: 1px; background: var(--border); margin: 48px 0; }
+ .divider { height: 1px; background: var(--border); margin: 48px 0; }
 
-        footer { text-align: center; font-size: 11px; color: #d9c4b4; margin-top: 64px; letter-spacing: 0.3px; }
-    </style>
+ footer { text-align: center; font-size: 11px; color: #d9c4b4; margin-top: 64px; letter-spacing: 0.3px; }
+ </style>
 </head>
 <body>
-    <div class="lang-switch">
-        <button class="lang-btn active" onclick="setLang('it')">IT</button>
-        <button class="lang-btn" onclick="setLang('en')">EN</button>
-    </div>
+ <div class="lang-switch">
+ <button class="lang-btn active" onclick="setLang('it')">IT</button>
+ <button class="lang-btn" onclick="setLang('en')">EN</button>
+ </div>
 
-    <div class="page">
-        <a href="/" class="back-link">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            <span data-i18n="backLink">Torna all'applicazione</span>
-        </a>
+ <div class="page">
+ <a href="/" class="back-link">
+ <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+ <span data-i18n="backLink">Torna all'applicazione</span>
+ </a>
 
-        <div class="page-header">
-            <div class="badge" data-i18n="badge">Guida Utente</div>
-            <h1 data-i18n="pageTitle">Come usare il sistema</h1>
-            <p data-i18n="pageSubtitle">Questa guida spiega come assegnare codici voucher, come annullare un'assegnazione precedente e come cercare i codici già assegnati a un ordine o contatto.</p>
-        </div>
+ <div class="page-header">
+ <div class="badge" data-i18n="badge">Guida Utente</div>
+ <h1 data-i18n="pageTitle">Come usare il sistema</h1>
+ <p data-i18n="pageSubtitle">Questa guida spiega come assegnare codici voucher, come annullare un'assegnazione precedente e come cercare i codici già assegnati a un ordine o contatto.</p>
+ </div>
 
-        <!-- SEZIONE 1: ASSEGNA -->
-        <div class="section">
-            <h2 class="section-title" data-i18n="sec1Title">1. Assegnare i codici</h2>
-            <p class="section-desc" data-i18n="sec1Desc">Per assegnare i codici voucher a un beneficiario, segui questi passaggi. I codici vengono marcati come <strong>Usato</strong> nel database nel momento in cui vengono assegnati.</p>
+ <!-- SEZIONE 1: ASSEGNA -->
+ <div class="section">
+ <h2 class="section-title" data-i18n="sec1Title">1. Assegnare i codici</h2>
+ <p class="section-desc" data-i18n="sec1Desc">Per assegnare i codici voucher a un beneficiario, segui questi passaggi. I codici vengono marcati come <strong>Usato</strong> nel database nel momento in cui vengono assegnati.</p>
 
-            <div class="steps">
+ <div class="steps">
 
-                <div class="step">
-                    <div class="step-num">1</div>
-                    <div class="step-content">
-                        <h3 data-i18n="step1a_title">Seleziona il tipo di voucher</h3>
-                        <p data-i18n="step1a_desc">Scegli tra <strong>Voucher1</strong> (Carta del Docente) o <strong>Voucher2</strong> (Giovani Merito) cliccando sul pulsante corrispondente. Il pulsante attivo si evidenzia in arancione.</p>
-                        <div class="mockup">
-                            <div class="mockup-label" data-i18n="mockup_tipoLabel">Tipo Voucher</div>
-                            <div class="mockup-toggles">
-                                <div class="mockup-btn on">Voucher1 <span class="sub" data-i18n="mockup_cdd">Carta del Docente</span></div>
-                                <div class="mockup-btn">Voucher2 <span class="sub" data-i18n="mockup_ym">Giovani Merito</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+ <div class="step">
+ <div class="step-num">1</div>
+ <div class="step-content">
+ <h3 data-i18n="step1a_title">Seleziona il tipo di voucher</h3>
+ <p data-i18n="step1a_desc">Scegli tra <strong>Voucher1</strong> o <strong>Voucher2</strong> cliccando sul pulsante corrispondente. Il pulsante attivo si evidenzia in arancione.</p>
+ <div class="mockup">
+ <div class="mockup-label" data-i18n="mockup_tipoLabel">Tipo Voucher</div>
+ <div class="mockup-toggles">
+ <div class="mockup-btn on">Voucher1</div>
+ <div class="mockup-btn">Voucher2</div>
+ </div>
+ </div>
+ </div>
+ </div>
 
-                <div class="step">
-                    <div class="step-num">2</div>
-                    <div class="step-content">
-                        <h3 data-i18n="step1b_title">Seleziona l'edizione</h3>
-                        <p data-i18n="step1b_desc">Scegli l'anno dell'edizione del voucher: <strong>2024</strong> o <strong>2025</strong>.</p>
-                        <div class="mockup">
-                            <div class="mockup-label" data-i18n="mockup_edLabel">Edizione</div>
-                            <div class="mockup-toggles">
-                                <div class="mockup-btn">2024</div>
-                                <div class="mockup-btn on">2025</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+ <div class="step">
+ <div class="step-num">2</div>
+ <div class="step-content">
+ <h3 data-i18n="step1b_title">Seleziona l'edizione</h3>
+ <p data-i18n="step1b_desc">Scegli l'anno dell'edizione del voucher: <strong>2024</strong> o <strong>2025</strong>.</p>
+ <div class="mockup">
+ <div class="mockup-label" data-i18n="mockup_edLabel">Edizione</div>
+ <div class="mockup-toggles">
+ <div class="mockup-btn">2024</div>
+ <div class="mockup-btn on">2025</div>
+ </div>
+ </div>
+ </div>
+ </div>
 
-                <div class="step">
-                    <div class="step-num">3</div>
-                    <div class="step-content">
-                        <h3 data-i18n="step1c_title">Inserisci l'importo richiesto</h3>
-                        <p data-i18n="step1c_desc">Digita l'importo in euro di cui ha bisogno il beneficiario. Sono accettati valori decimali (es. <code>47.30</code>). Se l'importo non è esprimibile esattamente con i codici disponibili, il sistema arrotonda automaticamente per eccesso al multiplo di 0.50 € più vicino.</p>
-                        <div class="mockup">
-                            <div class="mockup-label" data-i18n="mockup_impLabel">Importo Richiesto</div>
-                            <div class="mockup-input-wrap">
-                                <div class="mockup-input focused">47.30</div>
-                                <div class="mockup-unit">€</div>
-                            </div>
-                        </div>
-                        <div class="note" style="margin-top:12px">
-                            <strong data-i18n="noteTitle">Arrotondamento automatico</strong><br>
-                            <span data-i18n="noteText">Esempio: se richiedi <strong>47.30 €</strong>, il sistema cerca di coprire <strong>47.50 €</strong> (arrotondamento per eccesso a 0.50). Il totale assegnato potrebbe essere leggermente superiore all'importo richiesto.</span>
-                        </div>
-                    </div>
-                </div>
+ <div class="step">
+ <div class="step-num">3</div>
+ <div class="step-content">
+ <h3 data-i18n="step1c_title">Inserisci l'importo richiesto</h3>
+ <p data-i18n="step1c_desc">Digita l'importo in euro di cui ha bisogno il beneficiario. Sono accettati valori decimali (es. <code>47.30</code>). Se l'importo non è esprimibile esattamente con i codici disponibili, il sistema arrotonda automaticamente per eccesso al multiplo di 0.50 € più vicino.</p>
+ <div class="mockup">
+ <div class="mockup-label" data-i18n="mockup_impLabel">Importo Richiesto</div>
+ <div class="mockup-input-wrap">
+ <div class="mockup-input focused">47.30</div>
+ <div class="mockup-unit">€</div>
+ </div>
+ </div>
+ <div class="note" style="margin-top:12px">
+ <strong data-i18n="noteTitle">Arrotondamento automatico</strong><br>
+ <span data-i18n="noteText">Esempio: se richiedi <strong>47.30 €</strong>, il sistema cerca di coprire <strong>47.50 €</strong> (arrotondamento per eccesso a 0.50). Il totale assegnato potrebbe essere leggermente superiore all'importo richiesto.</span>
+ </div>
+ </div>
+ </div>
 
-                <div class="step">
-                    <div class="step-num">4</div>
-                    <div class="step-content">
-                        <h3 data-i18n="step1d_title">Inserisci l'Ordine ID</h3>
-                        <p data-i18n="step1d_desc">Inserisci l'identificativo dell'ordine di riferimento (es. <code>404-12345</code>). Questo campo è obbligatorio e viene salvato nel database insieme all'assegnazione.</p>
-                        <div class="mockup">
-                            <div class="mockup-label" data-i18n="mockup_ordineLabel">Ordine ID</div>
-                            <div class="mockup-input focused">404-12345</div>
-                        </div>
-                    </div>
-                </div>
+ <div class="step">
+ <div class="step-num">4</div>
+ <div class="step-content">
+ <h3 data-i18n="step1d_title">Inserisci l'Ordine ID</h3>
+ <p data-i18n="step1d_desc">Inserisci l'identificativo dell'ordine di riferimento (es. <code>404-12345</code>). Questo campo è obbligatorio e viene salvato nel database insieme all'assegnazione.</p>
+ <div class="mockup">
+ <div class="mockup-label" data-i18n="mockup_ordineLabel">Ordine ID</div>
+ <div class="mockup-input focused">404-12345</div>
+ </div>
+ </div>
+ </div>
 
-                <div class="step">
-                    <div class="step-num">5</div>
-                    <div class="step-content">
-                        <h3 data-i18n="step1e_title">Inserisci il Contatto ID</h3>
-                        <p data-i18n="step1e_desc">Inserisci l'identificativo del contatto (es. <code>AX2-9876</code>). Anche questo campo è obbligatorio e viene tracciato nel database.</p>
-                        <div class="mockup">
-                            <div class="mockup-label" data-i18n="mockup_contattoLabel">Contatto ID</div>
-                            <div class="mockup-input focused">AX2-9876</div>
-                        </div>
-                    </div>
-                </div>
+ <div class="step">
+ <div class="step-num">5</div>
+ <div class="step-content">
+ <h3 data-i18n="step1e_title">Inserisci il Contatto ID</h3>
+ <p data-i18n="step1e_desc">Inserisci l'identificativo del contatto (es. <code>AX2-9876</code>). Anche questo campo è obbligatorio e viene tracciato nel database.</p>
+ <div class="mockup">
+ <div class="mockup-label" data-i18n="mockup_contattoLabel">Contatto ID</div>
+ <div class="mockup-input focused">AX2-9876</div>
+ </div>
+ </div>
+ </div>
 
-                <div class="step">
-                    <div class="step-num">6</div>
-                    <div class="step-content">
-                        <h3 data-i18n="step1f_title">Seleziona la motivazione</h3>
-                        <p data-i18n="step1f_desc">Dal menu a tendina scegli la motivazione dell'assegnazione. Le opzioni disponibili sono: <strong>DNR</strong>, <strong>Correlato al Reso</strong>, <strong>Articolo Errato</strong>, <strong>Articolo Mancante</strong>, <strong>Altro</strong>.</p>
-                        <div class="mockup">
-                            <div class="mockup-label" data-i18n="mockup_motivLabel">Motivazione</div>
-                            <div class="mockup-select-wrap">
-                                <div class="mockup-select chosen" data-i18n="mockup_motivChosen">Correlato al Reso</div>
-                            </div>
-                        </div>
-                        <div class="note" style="margin-top:12px">
-                            <strong data-i18n="noteAltroTitle">Hai selezionato "Altro"?</strong><br>
-                            <span data-i18n="noteAltroText">Se scegli <strong>Altro</strong>, apparirà automaticamente un campo aggiuntivo <em>"Specifica motivazione"</em> in cui è obbligatorio descrivere il motivo. Senza questa descrizione non sarà possibile procedere con l'assegnazione.</span>
-                        </div>
-                        <div class="mockup" style="margin-top:12px">
-                            <div class="mockup-label" data-i18n="mockup_motivLabel">Motivazione</div>
-                            <div class="mockup-select-wrap">
-                                <div class="mockup-select chosen" data-i18n="mockup_motivAltro">Altro</div>
-                            </div>
-                            <div class="mockup-select-alert" data-i18n="mockup_dettaglioAlert">
-                                <strong data-i18n="mockup_dettaglioLabel">Specifica motivazione</strong> — campo obbligatorio<br>
-                                <span style="color:var(--text-muted)" data-i18n="mockup_dettaglioEx">es. "Richiesta del cliente per rimborso duplicato"</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+ <div class="step">
+ <div class="step-num">6</div>
+ <div class="step-content">
+ <h3 data-i18n="step1f_title">Seleziona la motivazione</h3>
+ <p data-i18n="step1f_desc">Dal menu a tendina scegli la motivazione dell'assegnazione. Le opzioni disponibili sono: <strong>DNR</strong>, <strong>Correlato al Reso</strong>, <strong>Articolo Errato</strong>, <strong>Articolo Mancante</strong>, <strong>Altro</strong>.</p>
+ <div class="mockup">
+ <div class="mockup-label" data-i18n="mockup_motivLabel">Motivazione</div>
+ <div class="mockup-select-wrap">
+ <div class="mockup-select chosen" data-i18n="mockup_motivChosen">Correlato al Reso</div>
+ </div>
+ </div>
+ <div class="note" style="margin-top:12px">
+ <strong data-i18n="noteAltroTitle">Hai selezionato "Altro"?</strong><br>
+ <span data-i18n="noteAltroText">Se scegli <strong>Altro</strong>, apparirà automaticamente un campo aggiuntivo <em>"Specifica motivazione"</em> in cui è obbligatorio descrivere il motivo. Senza questa descrizione non sarà possibile procedere con l'assegnazione.</span>
+ </div>
+ <div class="mockup" style="margin-top:12px">
+ <div class="mockup-label" data-i18n="mockup_motivLabel">Motivazione</div>
+ <div class="mockup-select-wrap">
+ <div class="mockup-select chosen" data-i18n="mockup_motivAltro">Altro</div>
+ </div>
+ <div class="mockup-select-alert" data-i18n="mockup_dettaglioAlert">
+ <strong data-i18n="mockup_dettaglioLabel">Specifica motivazione</strong> — campo obbligatorio<br>
+ <span style="color:var(--text-muted)" data-i18n="mockup_dettaglioEx">es. "Richiesta del cliente per rimborso duplicato"</span>
+ </div>
+ </div>
+ </div>
+ </div>
 
-                <div class="step">
-                    <div class="step-num">7</div>
-                    <div class="step-content">
-                        <h3 data-i18n="step1g_title">Clicca "Assegna Codici"</h3>
-                        <p data-i18n="step1g_desc">Il sistema elabora la richiesta e mostra i codici selezionati con il relativo importo.</p>
-                        <div class="mockup">
-                            <div class="mockup-submit" data-i18n="mockup_submit">Assegna Codici</div>
-                        </div>
-                    </div>
-                </div>
+ <div class="step">
+ <div class="step-num">7</div>
+ <div class="step-content">
+ <h3 data-i18n="step1g_title">Clicca "Assegna Codici"</h3>
+ <p data-i18n="step1g_desc">Il sistema elabora la richiesta e mostra i codici selezionati con il relativo importo.</p>
+ <div class="mockup">
+ <div class="mockup-submit" data-i18n="mockup_submit">Assegna Codici</div>
+ </div>
+ </div>
+ </div>
 
-                <div class="step">
-                    <div class="step-num">8</div>
-                    <div class="step-content">
-                        <h3 data-i18n="step1h_title">Copia e usa i codici</h3>
+ <div class="step">
+ <div class="step-num">8</div>
+ <div class="step-content">
+ <h3 data-i18n="step1h_title">Copia e usa i codici</h3>
 
-                        <p data-i18n="step1h_desc">I codici assegnati vengono mostrati in un riquadro. Usa il pulsante <strong>Copia</strong> per copiarli tutti negli appunti, pronti da incollare.</p>
-                        <div class="mockup">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                                <span style="font-family:'Playfair Display',serif;font-size:16px" data-i18n="mockup_assigned">Codici Assegnati</span>
-                                <span style="font-size:12px;color:var(--success);font-weight:700;background:var(--success-bg);padding:3px 10px;border-radius:20px">47.50 €</span>
-                            </div>
-                            <div class="mockup-code-box">
-                                AB12-CD34-EF56  <span class="eur">EUR 25.00</span>
-EF78-GH90-IJ12  <span class="eur">EUR 10.00</span>
-KL34-MN56-OP78  <span class="eur">EUR 10.00</span>
-QR12-ST34-UV56  <span class="eur">EUR 2.50</span>
-                                <div class="mockup-copy" data-i18n="mockup_copy">Copia</div>
-                            </div>
-                            <div class="mockup-gap"></div>
-                            <div class="mockup-success" data-i18n="mockup_summary">4 codici assegnati per un totale di 47.50 € (eccedenza: +0.20 €)</div>
-                        </div>
-                    </div>
-                </div>
+ <p data-i18n="step1h_desc">I codici assegnati vengono mostrati in un riquadro. Usa il pulsante <strong>Copia</strong> per copiarli tutti negli appunti, pronti da incollare.</p>
+ <div class="mockup">
+ <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+ <span style="font-family:'Playfair Display',serif;font-size:16px" data-i18n="mockup_assigned">Codici Assegnati</span>
+ <span style="font-size:12px;color:var(--success);font-weight:700;background:var(--success-bg);padding:3px 10px;border-radius:20px">47.50 €</span>
+ </div>
+ <div class="mockup-code-box">
+ AB12-CD34-EF56 <span class="eur">EUR 25.00</span>
+EF78-GH90-IJ12 <span class="eur">EUR 10.00</span>
+KL34-MN56-OP78 <span class="eur">EUR 10.00</span>
+QR12-ST34-UV56 <span class="eur">EUR 2.50</span>
+ <div class="mockup-copy" data-i18n="mockup_copy">Copia</div>
+ </div>
+ <div class="mockup-gap"></div>
+ <div class="mockup-success" data-i18n="mockup_summary">4 codici assegnati per un totale di 47.50 € (eccedenza: +0.20 €)</div>
+ </div>
+ </div>
+ </div>
 
-            </div>
-        </div>
+ </div>
+ </div>
 
-        <div class="divider"></div>
+ <div class="divider"></div>
 
-        <!-- SEZIONE 2: ANNULLA -->
-        <div class="section">
-            <h2 class="section-title" data-i18n="sec2Title">2. Annullare un'assegnazione</h2>
-            <p class="section-desc" data-i18n="sec2Desc">Se hai assegnato dei codici per errore o devi annullare un'operazione, puoi ripristinarli a <strong>Disponibile</strong> tramite il tab "Annulla".</p>
+ <!-- SEZIONE 2: ANNULLA -->
+ <div class="section">
+ <h2 class="section-title" data-i18n="sec2Title">2. Annullare un'assegnazione</h2>
+ <p class="section-desc" data-i18n="sec2Desc">Se hai assegnato dei codici per errore o devi annullare un'operazione, puoi ripristinarli a <strong>Disponibile</strong> tramite il tab "Annulla".</p>
 
-            <div class="steps">
+ <div class="steps">
 
-                <div class="step">
-                    <div class="step-num">1</div>
-                    <div class="step-content">
-                        <h3 data-i18n="step2a_title">Clicca sul tab "Annulla"</h3>
-                        <p data-i18n="step2a_desc">Nella parte alta della card trovi i due tab di navigazione. Clicca su "Annulla" per passare alla modalità di ripristino.</p>
-                        <div class="mockup">
-                            <div class="mockup-tabs">
-                                <div class="mockup-tab" data-i18n="mockup_tabAssegna">Assegna</div>
-                                <div class="mockup-tab on" data-i18n="mockup_tabAnnulla">Annulla</div>
-                                <div class="mockup-tab" data-i18n="mockup_tabCerca">Cerca</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+ <div class="step">
+ <div class="step-num">1</div>
+ <div class="step-content">
+ <h3 data-i18n="step2a_title">Clicca sul tab "Annulla"</h3>
+ <p data-i18n="step2a_desc">Nella parte alta della card trovi i due tab di navigazione. Clicca su "Annulla" per passare alla modalità di ripristino.</p>
+ <div class="mockup">
+ <div class="mockup-tabs">
+ <div class="mockup-tab" data-i18n="mockup_tabAssegna">Assegna</div>
+ <div class="mockup-tab on" data-i18n="mockup_tabAnnulla">Annulla</div>
+ <div class="mockup-tab" data-i18n="mockup_tabCerca">Cerca</div>
+ </div>
+ </div>
+ </div>
+ </div>
 
-                <div class="step">
-                    <div class="step-num">2</div>
-                    <div class="step-content">
-                        <h3 data-i18n="step2b_title">Incolla i codici da annullare</h3>
-                        <p data-i18n="step2b_desc">Copia i codici che vuoi ripristinare e incollali nel campo di testo, <strong>uno per riga</strong>. Puoi inserirne quanti vuoi contemporaneamente.</p>
-                        <div class="mockup">
-                            <div class="mockup-label" data-i18n="mockup_annullaLabel">Codici da annullare</div>
-                            <div class="mockup-textarea">AB12-CD34-EF56
+ <div class="step">
+ <div class="step-num">2</div>
+ <div class="step-content">
+ <h3 data-i18n="step2b_title">Incolla i codici da annullare</h3>
+ <p data-i18n="step2b_desc">Copia i codici che vuoi ripristinare e incollali nel campo di testo, <strong>uno per riga</strong>. Puoi inserirne quanti vuoi contemporaneamente.</p>
+ <div class="mockup">
+ <div class="mockup-label" data-i18n="mockup_annullaLabel">Codici da annullare</div>
+ <div class="mockup-textarea">AB12-CD34-EF56
 EF78-GH90-IJ12
 KL34-MN56-OP78</div>
-                            <div class="mockup-hint" data-i18n="mockup_annullaHint">Incolla i codici da ripristinare, uno per riga</div>
-                        </div>
-                    </div>
-                </div>
+ <div class="mockup-hint" data-i18n="mockup_annullaHint">Incolla i codici da ripristinare, uno per riga</div>
+ </div>
+ </div>
+ </div>
 
-                <div class="step">
-                    <div class="step-num">3</div>
-                    <div class="step-content">
-                        <h3 data-i18n="step2c_title">Clicca "Ripristina Codici"</h3>
-                        <p data-i18n="step2c_desc">Il sistema aggiorna il database e mostra quali codici sono stati ripristinati. Se un codice non viene trovato o è già disponibile, viene segnalato separatamente.</p>
-                        <div class="mockup">
-                            <div class="mockup-submit" data-i18n="mockup_ripristina">Ripristina Codici</div>
-                            <div class="mockup-gap"></div>
-                            <div class="mockup-success" data-i18n="mockup_ripristinaOk">3 codici ripristinati a "Disponibile"</div>
-                            <div class="mockup-gap"></div>
-                            <div class="mockup-warning" data-i18n="mockup_nonTrovati">Non trovati o già disponibili: XX99-YY00-ZZ11</div>
-                        </div>
-                    </div>
-                </div>
+ <div class="step">
+ <div class="step-num">3</div>
+ <div class="step-content">
+ <h3 data-i18n="step2c_title">Clicca "Ripristina Codici"</h3>
+ <p data-i18n="step2c_desc">Il sistema aggiorna il database e mostra quali codici sono stati ripristinati. Se un codice non viene trovato o è già disponibile, viene segnalato separatamente.</p>
+ <div class="mockup">
+ <div class="mockup-submit" data-i18n="mockup_ripristina">Ripristina Codici</div>
+ <div class="mockup-gap"></div>
+ <div class="mockup-success" data-i18n="mockup_ripristinaOk">3 codici ripristinati a "Disponibile"</div>
+ <div class="mockup-gap"></div>
+ <div class="mockup-warning" data-i18n="mockup_nonTrovati">Non trovati o già disponibili: XX99-YY00-ZZ11</div>
+ </div>
+ </div>
+ </div>
 
-            </div>
-        </div>
+ </div>
+ </div>
 
-        <div class="divider"></div>
+ <div class="divider"></div>
 
-        <!-- SEZIONE 3: CERCA -->
-        <div class="section">
-            <h2 class="section-title" data-i18n="sec3Title">3. Cercare un ordine</h2>
-            <p class="section-desc" data-i18n="sec3Desc">Usa il tab "Cerca" per verificare se a un ordine, contatto o codice specifico sono già stati assegnati dei voucher.</p>
+ <!-- SEZIONE 3: CERCA -->
+ <div class="section">
+ <h2 class="section-title" data-i18n="sec3Title">3. Cercare un ordine</h2>
+ <p class="section-desc" data-i18n="sec3Desc">Usa il tab "Cerca" per verificare se a un ordine, contatto o codice specifico sono già stati assegnati dei voucher.</p>
 
-            <div class="steps">
+ <div class="steps">
 
-                <div class="step">
-                    <div class="step-num">1</div>
-                    <div class="step-content">
-                        <h3 data-i18n="step3a_title">Clicca sul tab "Cerca"</h3>
-                        <p data-i18n="step3a_desc">Nella parte alta della card trovi i tre tab di navigazione. Clicca su "Cerca" per accedere alla ricerca.</p>
-                        <div class="mockup">
-                            <div class="mockup-tabs">
-                                <div class="mockup-tab" data-i18n="mockup_tabAssegna">Assegna</div>
-                                <div class="mockup-tab" data-i18n="mockup_tabAnnulla">Annulla</div>
-                                <div class="mockup-tab on" data-i18n="mockup_tabCerca">Cerca</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+ <div class="step">
+ <div class="step-num">1</div>
+ <div class="step-content">
+ <h3 data-i18n="step3a_title">Clicca sul tab "Cerca"</h3>
+ <p data-i18n="step3a_desc">Nella parte alta della card trovi i tre tab di navigazione. Clicca su "Cerca" per accedere alla ricerca.</p>
+ <div class="mockup">
+ <div class="mockup-tabs">
+ <div class="mockup-tab" data-i18n="mockup_tabAssegna">Assegna</div>
+ <div class="mockup-tab" data-i18n="mockup_tabAnnulla">Annulla</div>
+ <div class="mockup-tab on" data-i18n="mockup_tabCerca">Cerca</div>
+ </div>
+ </div>
+ </div>
+ </div>
 
-                <div class="step">
-                    <div class="step-num">2</div>
-                    <div class="step-content">
-                        <h3 data-i18n="step3b_title">Inserisci il termine di ricerca</h3>
-                        <p data-i18n="step3b_desc">Nel campo puoi inserire uno dei tre tipi di dato: il <strong>numero ordine</strong> (es. <code>404-12345</code>), il <strong>Contatto ID</strong> (es. <code>AX2-9876</code>) oppure un <strong>codice voucher</strong> preciso (es. <code>AB12-CD34-EF56</code>). La ricerca è parziale: basta anche solo una parte del testo.</p>
-                        <div class="mockup">
-                            <div class="mockup-label" data-i18n="mockup_cercaLabel">Cerca per ordine, codice o contatto</div>
-                            <div class="mockup-input focused">404-12345</div>
-                            <div class="mockup-hint" data-i18n="mockup_cercaHint">Inserisci un numero ordine, un codice voucher o un contatto</div>
-                        </div>
-                    </div>
-                </div>
+ <div class="step">
+ <div class="step-num">2</div>
+ <div class="step-content">
+ <h3 data-i18n="step3b_title">Inserisci il termine di ricerca</h3>
+ <p data-i18n="step3b_desc">Nel campo puoi inserire uno dei tre tipi di dato: il <strong>numero ordine</strong> (es. <code>404-12345</code>), il <strong>Contatto ID</strong> (es. <code>AX2-9876</code>) oppure un <strong>codice voucher</strong> preciso (es. <code>AB12-CD34-EF56</code>). La ricerca è parziale: basta anche solo una parte del testo.</p>
+ <div class="mockup">
+ <div class="mockup-label" data-i18n="mockup_cercaLabel">Cerca per ordine, codice o contatto</div>
+ <div class="mockup-input focused">404-12345</div>
+ <div class="mockup-hint" data-i18n="mockup_cercaHint">Inserisci un numero ordine, un codice voucher o un contatto</div>
+ </div>
+ </div>
+ </div>
 
-                <div class="step">
-                    <div class="step-num">3</div>
-                    <div class="step-content">
-                        <h3 data-i18n="step3c_title">Leggi i risultati</h3>
-                        <p data-i18n="step3c_desc">Per ogni ordine trovato vengono mostrati: numero ordine, contatto, data, motivazione e la lista completa dei codici assegnati con importo, tipo ed edizione. Se non ci sono risultati, viene mostrato un messaggio di avviso.</p>
-                        <div class="mockup">
-                            <div style="padding:14px;border:1px solid var(--border);border-radius:8px">
-                                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-                                    <div>
-                                        <span style="font-size:13px;font-weight:700" data-i18n="mockup_cercaOrdine">Ordine: <span style="color:var(--accent)">404-12345</span></span><br>
-                                        <span style="font-size:12px;color:var(--text-muted)" data-i18n="mockup_cercaContatto">Contatto: AX2-9876</span>
-                                    </div>
-                                    <div style="text-align:right">
-                                        <span style="font-size:11px;color:var(--text-muted)">2025-03-01</span><br>
-                                        <span style="font-size:11px;background:var(--accent-soft);color:var(--accent-2);padding:2px 8px;border-radius:10px;font-weight:600">DNR</span>
-                                    </div>
-                                </div>
-                                <div style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--text-muted);margin-top:8px" data-i18n="mockup_cercaCodici">Codici assegnati (2)</div>
-                                <div class="mockup-code-box" style="margin-top:8px">AB12-CD34-EF56 <span class="eur">EUR 25.00</span>  Voucher1 2024
-EF78-GH90-IJ12 <span class="eur">EUR 10.00</span>  Voucher1 2024</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+ <div class="step">
+ <div class="step-num">3</div>
+ <div class="step-content">
+ <h3 data-i18n="step3c_title">Leggi i risultati</h3>
+ <p data-i18n="step3c_desc">Per ogni ordine trovato vengono mostrati: numero ordine, contatto, data, motivazione e la lista completa dei codici assegnati con importo, tipo ed edizione. Se non ci sono risultati, viene mostrato un messaggio di avviso.</p>
+ <div class="mockup">
+ <div style="padding:14px;border:1px solid var(--border);border-radius:8px">
+ <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+ <div>
+ <span style="font-size:13px;font-weight:700" data-i18n="mockup_cercaOrdine">Ordine: <span style="color:var(--accent)">404-12345</span></span><br>
+ <span style="font-size:12px;color:var(--text-muted)" data-i18n="mockup_cercaContatto">Contatto: AX2-9876</span>
+ </div>
+ <div style="text-align:right">
+ <span style="font-size:11px;color:var(--text-muted)">2025-03-01</span><br>
+ <span style="font-size:11px;background:var(--accent-soft);color:var(--accent-2);padding:2px 8px;border-radius:10px;font-weight:600">DNR</span>
+ </div>
+ </div>
+ <div style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--text-muted);margin-top:8px" data-i18n="mockup_cercaCodici">Codici assegnati (2)</div>
+ <div class="mockup-code-box" style="margin-top:8px">AB12-CD34-EF56 <span class="eur">EUR 25.00</span> Voucher1 2024
+EF78-GH90-IJ12 <span class="eur">EUR 10.00</span> Voucher1 2024</div>
+ </div>
+ </div>
+ </div>
+ </div>
 
-            </div>
-        </div>
+ </div>
+ </div>
 
-        <div class="divider"></div>
+ <div class="divider"></div>
 
-        <!-- SEZIONE 4: DENOMINAZIONI -->
-        <div class="section">
-            <h2 class="section-title" data-i18n="sec4Title">4. Codici disponibili</h2>
-            <p class="section-desc" data-i18n="sec4Desc">Il sistema dispone di codici nelle seguenti denominazioni. L'algoritmo seleziona automaticamente la combinazione ottimale per coprire l'importo richiesto.</p>
-            <div class="mockup">
-                <table class="info-table">
-                    <thead>
-                        <tr>
-                            <th data-i18n="th_importo">Importo</th>
-                            <th data-i18n="th_tipo">Tipo</th>
-                            <th data-i18n="th_logica">Logica di selezione</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td><span class="tag">250 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_grandi">Codici grandi, usati per primi</td></tr>
-                        <tr><td><span class="tag">100 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_grandi">Codici grandi, usati per primi</td></tr>
-                        <tr><td><span class="tag">50 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_medi">Codici medi</td></tr>
-                        <tr><td><span class="tag">25 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_medi">Codici medi</td></tr>
-                        <tr><td><span class="tag">10 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_piccoli">Codici piccoli</td></tr>
-                        <tr><td><span class="tag">5 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_piccoli">Codici piccoli</td></tr>
-                        <tr><td><span class="tag">1 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_mini">Codici minimi, usati per completare</td></tr>
-                        <tr><td><span class="tag">0.50 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_mini">Codici minimi, usati per completare</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+ <!-- SEZIONE 4: DENOMINAZIONI -->
+ <div class="section">
+ <h2 class="section-title" data-i18n="sec4Title">4. Codici disponibili</h2>
+ <p class="section-desc" data-i18n="sec4Desc">Il sistema dispone di codici nelle seguenti denominazioni. L'algoritmo seleziona automaticamente la combinazione ottimale per coprire l'importo richiesto.</p>
+ <div class="mockup">
+ <table class="info-table">
+ <thead>
+ <tr>
+ <th data-i18n="th_importo">Importo</th>
+ <th data-i18n="th_tipo">Tipo</th>
+ <th data-i18n="th_logica">Logica di selezione</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr><td><span class="tag">250 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_grandi">Codici grandi, usati per primi</td></tr>
+ <tr><td><span class="tag">100 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_grandi">Codici grandi, usati per primi</td></tr>
+ <tr><td><span class="tag">50 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_medi">Codici medi</td></tr>
+ <tr><td><span class="tag">25 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_medi">Codici medi</td></tr>
+ <tr><td><span class="tag">10 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_piccoli">Codici piccoli</td></tr>
+ <tr><td><span class="tag">5 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_piccoli">Codici piccoli</td></tr>
+ <tr><td><span class="tag">1 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_mini">Codici minimi, usati per completare</td></tr>
+ <tr><td><span class="tag">0.50 €</span></td><td>Voucher1 / Voucher2</td><td data-i18n="td_mini">Codici minimi, usati per completare</td></tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
 
-        <div class="divider"></div>
+ <div class="divider"></div>
 
-        <!-- SEZIONE 5: LINGUA -->
-        <div class="section">
-            <h2 class="section-title" data-i18n="sec5Title">5. Cambiare lingua</h2>
-            <p class="section-desc" data-i18n="sec5Desc">L'interfaccia è disponibile in italiano e in inglese. Usa il selettore in alto a destra per cambiare lingua in qualsiasi momento.</p>
-            <div class="mockup" style="display:inline-flex;gap:4px;padding:4px;border-radius:24px">
-                <div style="padding:5px 14px;border-radius:20px;background:var(--text);color:#fff;font-size:12px;font-weight:700">IT</div>
-                <div style="padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;color:var(--text-muted)">EN</div>
-            </div>
-        </div>
+ <!-- SEZIONE 5: LINGUA -->
+ <div class="section">
+ <h2 class="section-title" data-i18n="sec5Title">5. Cambiare lingua</h2>
+ <p class="section-desc" data-i18n="sec5Desc">L'interfaccia è disponibile in italiano e in inglese. Usa il selettore in alto a destra per cambiare lingua in qualsiasi momento.</p>
+ <div class="mockup" style="display:inline-flex;gap:4px;padding:4px;border-radius:24px">
+ <div style="padding:5px 14px;border-radius:20px;background:var(--text);color:#fff;font-size:12px;font-weight:700">IT</div>
+ <div style="padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;color:var(--text-muted)">EN</div>
+ </div>
+ </div>
 
-        <footer>Matteo Cambarau</footer>
-    </div>
+ <footer>Matteo Cambarau</footer>
+ </div>
 
-    <script>
-        const T = {
-            it: {
-                backLink: 'Torna all\'applicazione',
-                badge: 'Guida Utente',
-                pageTitle: 'Come usare il sistema',
-                pageSubtitle: 'Questa guida spiega come assegnare codici voucher, come annullare un\'assegnazione precedente e come cercare i codici già assegnati a un ordine o contatto.',
-                sec1Title: '1. Assegnare i codici',
-                sec1Desc: 'Per assegnare i codici voucher a un beneficiario, segui questi passaggi. I codici vengono marcati come Usato nel database nel momento in cui vengono assegnati.',
-                step1a_title: 'Seleziona il tipo di voucher',
-                step1a_desc: 'Scegli tra Voucher1 (Carta del Docente) o Voucher2 (Giovani Merito) cliccando sul pulsante corrispondente. Il pulsante attivo si evidenzia in arancione.',
-                step1b_title: 'Seleziona l\'edizione',
-                step1b_desc: 'Scegli l\'anno dell\'edizione del voucher: 2024 o 2025.',
-                step1c_title: 'Inserisci l\'importo richiesto',
-                step1c_desc: 'Digita l\'importo in euro. Sono accettati valori decimali (es. 47.30). Se l\'importo non è esprimibile esattamente, il sistema arrotonda automaticamente per eccesso al multiplo di 0.50 € più vicino.',
-                noteTitle: 'Arrotondamento automatico',
-                noteText: 'Esempio: se richiedi 47.30 €, il sistema cerca di coprire 47.50 € (arrotondamento per eccesso a 0.50). Il totale assegnato potrebbe essere leggermente superiore all\'importo richiesto.',
-                step1d_title: 'Inserisci l\'Ordine ID',
-                step1d_desc: 'Inserisci l\'identificativo dell\'ordine di riferimento (es. 404-12345). Questo campo è obbligatorio e viene salvato nel database insieme all\'assegnazione.',
-                step1e_title: 'Inserisci il Contatto ID',
-                step1e_desc: 'Inserisci l\'identificativo del contatto (es. AX2-9876). Anche questo campo è obbligatorio e viene tracciato nel database.',
-                step1f_title: 'Seleziona la motivazione',
-                step1f_desc: 'Dal menu a tendina scegli la motivazione dell\'assegnazione. Le opzioni disponibili sono: DNR, Correlato al Reso, Articolo Errato, Articolo Mancante, Altro.',
-                noteAltroTitle: 'Hai selezionato "Altro"?',
-                noteAltroText: 'Se scegli Altro, apparirà automaticamente un campo aggiuntivo "Specifica motivazione" in cui è obbligatorio descrivere il motivo. Senza questa descrizione non sarà possibile procedere con l\'assegnazione.',
-                step1g_title: 'Clicca "Assegna Codici"',
-                step1g_desc: 'Il sistema elabora la richiesta e mostra i codici selezionati con il relativo importo.',
-                step1h_title: 'Copia e usa i codici',
-                step1h_desc: 'I codici assegnati vengono mostrati in un riquadro. Usa il pulsante Copia per copiarli tutti negli appunti.',
-                sec2Title: '2. Annullare un\'assegnazione',
-                sec2Desc: 'Se hai assegnato dei codici per errore, puoi ripristinarli a Disponibile tramite il tab "Annulla".',
-                step2a_title: 'Clicca sul tab "Annulla"',
-                step2a_desc: 'Nella parte alta della card trovi i tre tab di navigazione. Clicca su "Annulla" per passare alla modalità di ripristino.',
-                step2b_title: 'Incolla i codici da annullare',
-                step2b_desc: 'Copia i codici che vuoi ripristinare e incollali nel campo di testo, uno per riga. Puoi inserirne quanti vuoi contemporaneamente.',
-                step2c_title: 'Clicca "Ripristina Codici"',
-                step2c_desc: 'Il sistema aggiorna il database e mostra quali codici sono stati ripristinati. Se un codice non viene trovato o è già disponibile, viene segnalato separatamente.',
-                sec3Title: '3. Cercare un ordine',
-                sec3Desc: 'Usa il tab "Cerca" per verificare se a un ordine, contatto o codice specifico sono già stati assegnati dei voucher.',
-                step3a_title: 'Clicca sul tab "Cerca"',
-                step3a_desc: 'Nella parte alta della card trovi i tre tab di navigazione. Clicca su "Cerca" per accedere alla ricerca.',
-                step3b_title: 'Inserisci il termine di ricerca',
-                step3b_desc: 'Nel campo puoi inserire: il numero ordine (es. 404-12345), il Contatto ID (es. AX2-9876) oppure un codice voucher (es. AB12-CD34-EF56). La ricerca è parziale: basta anche solo una parte del testo.',
-                step3c_title: 'Leggi i risultati',
-                step3c_desc: 'Per ogni ordine trovato vengono mostrati: numero ordine, contatto, data, motivazione e la lista completa dei codici assegnati. Se non ci sono risultati, viene mostrato un messaggio di avviso.',
-                sec4Title: '4. Codici disponibili',
-                sec4Desc: 'Il sistema dispone di codici nelle seguenti denominazioni. L\'algoritmo seleziona automaticamente la combinazione ottimale per coprire l\'importo richiesto.',
-                th_importo: 'Importo', th_tipo: 'Tipo', th_logica: 'Logica di selezione',
-                td_grandi: 'Codici grandi, usati per primi',
-                td_medi: 'Codici medi',
-                td_piccoli: 'Codici piccoli',
-                td_mini: 'Codici minimi, usati per completare',
-                sec5Title: '5. Cambiare lingua',
-                sec5Desc: 'L\'interfaccia è disponibile in italiano e in inglese. Usa il selettore in alto a destra per cambiare lingua in qualsiasi momento.',
-                mockup_tipoLabel: 'Tipo Voucher', mockup_cdd: 'Carta del Docente', mockup_ym: 'Giovani Merito',
-                mockup_edLabel: 'Edizione', mockup_impLabel: 'Importo Richiesto',
-                mockup_ordineLabel: 'Ordine ID', mockup_contattoLabel: 'Contatto ID',
-                mockup_motivLabel: 'Motivazione', mockup_motivChosen: 'Correlato al Reso', mockup_motivAltro: 'Altro',
-                mockup_dettaglioAlert: 'Specifica motivazione — campo obbligatorio',
-                mockup_dettaglioLabel: 'Specifica motivazione',
-                mockup_dettaglioEx: 'es. "Richiesta del cliente per rimborso duplicato"',
-                mockup_submit: 'Assegna Codici', mockup_assigned: 'Codici Assegnati', mockup_copy: 'Copia',
-                mockup_summary: '4 codici assegnati per un totale di 47.50 € (eccedenza: +0.20 €)',
-                mockup_tabAssegna: 'Assegna', mockup_tabAnnulla: 'Annulla', mockup_tabCerca: 'Cerca',
-                mockup_annullaLabel: 'Codici da annullare', mockup_annullaHint: 'Incolla i codici da ripristinare, uno per riga',
-                mockup_ripristina: 'Ripristina Codici', mockup_ripristinaOk: '3 codici ripristinati a "Disponibile"',
-                mockup_nonTrovati: 'Non trovati o già disponibili: XX99-YY00-ZZ11',
-                mockup_cercaLabel: 'Cerca per ordine, codice o contatto',
-                mockup_cercaHint: 'Inserisci un numero ordine, un codice voucher o un contatto',
-                mockup_cercaOrdine: 'Ordine: 404-12345',
-                mockup_cercaContatto: 'Contatto: AX2-9876',
-                mockup_cercaCodici: 'Codici assegnati (2)',
-            },
-            en: {
-                backLink: 'Back to application',
-                badge: 'User Guide',
-                pageTitle: 'How to use the system',
-                pageSubtitle: 'This guide explains how to assign voucher codes, how to undo a previous assignment, and how to search for codes already assigned to an order or contact.',
-                sec1Title: '1. Assigning codes',
-                sec1Desc: 'To assign voucher codes to a beneficiary, follow these steps. Codes are marked as Used in the database as soon as they are assigned.',
-                step1a_title: 'Select the voucher type',
-                step1a_desc: 'Choose between Voucher1 (Teacher\'s Card) or Voucher2 (Young Merit) by clicking the corresponding button. The active button is highlighted in orange.',
-                step1b_title: 'Select the edition',
-                step1b_desc: 'Choose the voucher edition year: 2024 or 2025.',
-                step1c_title: 'Enter the requested amount',
-                step1c_desc: 'Type the amount in euros. Decimal values are accepted (e.g. 47.30). If the amount cannot be covered exactly, the system automatically rounds up to the nearest 0.50 € multiple.',
-                noteTitle: 'Automatic rounding',
-                noteText: 'Example: if you request 47.30 €, the system tries to cover 47.50 € (rounded up to 0.50). The assigned total may be slightly higher than the requested amount.',
-                step1d_title: 'Enter the Order ID',
-                step1d_desc: 'Enter the reference order identifier (e.g. 404-12345). This field is mandatory and is saved to the database along with the assignment.',
-                step1e_title: 'Enter the Contact ID',
-                step1e_desc: 'Enter the contact identifier (e.g. AX2-9876). This field is also mandatory and is tracked in the database.',
-                step1f_title: 'Select the reason',
-                step1f_desc: 'From the dropdown menu, choose the reason for the assignment. Available options are: DNR, Return Related, Wrong Item, Missing Item, Other.',
-                noteAltroTitle: 'Did you select "Other"?',
-                noteAltroText: 'If you choose Other, an additional "Specify reason" field will automatically appear where a description is required. Without this description you will not be able to proceed with the assignment.',
-                step1g_title: 'Click "Assign Codes"',
-                step1g_desc: 'The system processes the request and shows the selected codes with their amounts.',
-                step1h_title: 'Copy and use the codes',
-                step1h_desc: 'Assigned codes are shown in a box. Use the Copy button to copy them all to the clipboard.',
-                sec2Title: '2. Undoing an assignment',
-                sec2Desc: 'If you assigned codes by mistake, you can restore them to Available via the "Undo" tab.',
-                step2a_title: 'Click the "Undo" tab',
-                step2a_desc: 'At the top of the card you\'ll find three navigation tabs. Click "Undo" to switch to restore mode.',
-                step2b_title: 'Paste the codes to undo',
-                step2b_desc: 'Copy the codes you want to restore and paste them into the text field, one per line. You can enter as many as you want at once.',
-                step2c_title: 'Click "Restore Codes"',
-                step2c_desc: 'The system updates the database and shows which codes were restored. If a code is not found or is already available, it is reported separately.',
-                sec3Title: '3. Searching an order',
-                sec3Desc: 'Use the "Search" tab to check if vouchers have already been assigned to a specific order, contact or code.',
-                step3a_title: 'Click the "Search" tab',
-                step3a_desc: 'At the top of the card you\'ll find three navigation tabs. Click "Search" to access the search.',
-                step3b_title: 'Enter your search term',
-                step3b_desc: 'You can enter: an order number (e.g. 404-12345), a Contact ID (e.g. AX2-9876) or a voucher code (e.g. AB12-CD34-EF56). The search is partial — even a portion of the text is enough.',
-                step3c_title: 'Read the results',
-                step3c_desc: 'For each order found, the system shows: order number, contact, date, reason and the full list of assigned codes. If there are no results, a warning message is shown.',
-                sec4Title: '4. Available codes',
-                sec4Desc: 'The system has codes in the following denominations. The algorithm automatically selects the optimal combination to cover the requested amount.',
-                th_importo: 'Amount', th_tipo: 'Type', th_logica: 'Selection logic',
-                td_grandi: 'Large codes, used first',
-                td_medi: 'Medium codes',
-                td_piccoli: 'Small codes',
-                td_mini: 'Minimum codes, used to complete',
-                sec5Title: '5. Changing language',
-                sec5Desc: 'The interface is available in Italian and English. Use the selector in the top right corner to change language at any time.',
-                mockup_tipoLabel: 'Voucher Type', mockup_cdd: 'Teacher\'s Card', mockup_ym: 'Young Merit',
-                mockup_edLabel: 'Edition', mockup_impLabel: 'Requested Amount',
-                mockup_ordineLabel: 'Order ID', mockup_contattoLabel: 'Contact ID',
-                mockup_motivLabel: 'Reason', mockup_motivChosen: 'Return Related', mockup_motivAltro: 'Other',
-                mockup_dettaglioAlert: 'Specify reason — mandatory field',
-                mockup_dettaglioLabel: 'Specify reason',
-                mockup_dettaglioEx: 'e.g. "Customer request for duplicate refund"',
-                mockup_submit: 'Assign Codes', mockup_assigned: 'Assigned Codes', mockup_copy: 'Copy',
-                mockup_summary: '4 codes assigned for a total of 47.50 € (excess: +0.20 €)',
-                mockup_tabAssegna: 'Assign', mockup_tabAnnulla: 'Undo', mockup_tabCerca: 'Search',
-                mockup_annullaLabel: 'Codes to undo', mockup_annullaHint: 'Paste codes to restore, one per line',
-                mockup_ripristina: 'Restore Codes', mockup_ripristinaOk: '3 codes restored to "Available"',
-                mockup_nonTrovati: 'Not found or already available: XX99-YY00-ZZ11',
-                mockup_cercaLabel: 'Search by order, code or contact',
-                mockup_cercaHint: 'Enter an order number, a voucher code or a contact',
-                mockup_cercaOrdine: 'Order: 404-12345',
-                mockup_cercaContatto: 'Contact: AX2-9876',
-                mockup_cercaCodici: 'Assigned codes (2)',
-            }
-        };
+ <script>
+ const T = {
+ it: {
+ backLink: 'Torna all\'applicazione',
+ badge: 'Guida Utente',
+ pageTitle: 'Come usare il sistema',
+ pageSubtitle: 'Questa guida spiega come assegnare codici voucher, come annullare un\'assegnazione precedente e come cercare i codici già assegnati a un ordine o contatto.',
+ sec1Title: '1. Assegnare i codici',
+ sec1Desc: 'Per assegnare i codici voucher a un beneficiario, segui questi passaggi. I codici vengono marcati come Usato nel database nel momento in cui vengono assegnati.',
+ step1a_title: 'Seleziona il tipo di voucher',
+ step1a_desc: 'Scegli tra Voucher1 o Voucher2 cliccando sul pulsante corrispondente. Il pulsante attivo si evidenzia in arancione.',
+ step1b_title: 'Seleziona l\'edizione',
+ step1b_desc: 'Scegli l\'anno dell\'edizione del voucher: 2024 o 2025.',
+ step1c_title: 'Inserisci l\'importo richiesto',
+ step1c_desc: 'Digita l\'importo in euro. Sono accettati valori decimali (es. 47.30). Se l\'importo non è esprimibile esattamente, il sistema arrotonda automaticamente per eccesso al multiplo di 0.50 € più vicino.',
+ noteTitle: 'Arrotondamento automatico',
+ noteText: 'Esempio: se richiedi 47.30 €, il sistema cerca di coprire 47.50 € (arrotondamento per eccesso a 0.50). Il totale assegnato potrebbe essere leggermente superiore all\'importo richiesto.',
+ step1d_title: 'Inserisci l\'Ordine ID',
+ step1d_desc: 'Inserisci l\'identificativo dell\'ordine di riferimento (es. 404-12345). Questo campo è obbligatorio e viene salvato nel database insieme all\'assegnazione.',
+ step1e_title: 'Inserisci il Contatto ID',
+ step1e_desc: 'Inserisci l\'identificativo del contatto (es. AX2-9876). Anche questo campo è obbligatorio e viene tracciato nel database.',
+ step1f_title: 'Seleziona la motivazione',
+ step1f_desc: 'Dal menu a tendina scegli la motivazione dell\'assegnazione. Le opzioni disponibili sono: DNR, Correlato al Reso, Articolo Errato, Articolo Mancante, Altro.',
+ noteAltroTitle: 'Hai selezionato "Altro"?',
+ noteAltroText: 'Se scegli Altro, apparirà automaticamente un campo aggiuntivo "Specifica motivazione" in cui è obbligatorio descrivere il motivo. Senza questa descrizione non sarà possibile procedere con l\'assegnazione.',
+ step1g_title: 'Clicca "Assegna Codici"',
+ step1g_desc: 'Il sistema elabora la richiesta e mostra i codici selezionati con il relativo importo.',
+ step1h_title: 'Copia e usa i codici',
+ step1h_desc: 'I codici assegnati vengono mostrati in un riquadro. Usa il pulsante Copia per copiarli tutti negli appunti.',
+ sec2Title: '2. Annullare un\'assegnazione',
+ sec2Desc: 'Se hai assegnato dei codici per errore, puoi ripristinarli a Disponibile tramite il tab "Annulla".',
+ step2a_title: 'Clicca sul tab "Annulla"',
+ step2a_desc: 'Nella parte alta della card trovi i tre tab di navigazione. Clicca su "Annulla" per passare alla modalità di ripristino.',
+ step2b_title: 'Incolla i codici da annullare',
+ step2b_desc: 'Copia i codici che vuoi ripristinare e incollali nel campo di testo, uno per riga. Puoi inserirne quanti vuoi contemporaneamente.',
+ step2c_title: 'Clicca "Ripristina Codici"',
+ step2c_desc: 'Il sistema aggiorna il database e mostra quali codici sono stati ripristinati. Se un codice non viene trovato o è già disponibile, viene segnalato separatamente.',
+ sec3Title: '3. Cercare un ordine',
+ sec3Desc: 'Usa il tab "Cerca" per verificare se a un ordine, contatto o codice specifico sono già stati assegnati dei voucher.',
+ step3a_title: 'Clicca sul tab "Cerca"',
+ step3a_desc: 'Nella parte alta della card trovi i tre tab di navigazione. Clicca su "Cerca" per accedere alla ricerca.',
+ step3b_title: 'Inserisci il termine di ricerca',
+ step3b_desc: 'Nel campo puoi inserire: il numero ordine (es. 404-12345), il Contatto ID (es. AX2-9876) oppure un codice voucher (es. AB12-CD34-EF56). La ricerca è parziale: basta anche solo una parte del testo.',
+ step3c_title: 'Leggi i risultati',
+ step3c_desc: 'Per ogni ordine trovato vengono mostrati: numero ordine, contatto, data, motivazione e la lista completa dei codici assegnati. Se non ci sono risultati, viene mostrato un messaggio di avviso.',
+ sec4Title: '4. Codici disponibili',
+ sec4Desc: 'Il sistema dispone di codici nelle seguenti denominazioni. L\'algoritmo seleziona automaticamente la combinazione ottimale per coprire l\'importo richiesto.',
+ th_importo: 'Importo', th_tipo: 'Tipo', th_logica: 'Logica di selezione',
+ td_grandi: 'Codici grandi, usati per primi',
+ td_medi: 'Codici medi',
+ td_piccoli: 'Codici piccoli',
+ td_mini: 'Codici minimi, usati per completare',
+ sec5Title: '5. Cambiare lingua',
+ sec5Desc: 'L\'interfaccia è disponibile in italiano e in inglese. Usa il selettore in alto a destra per cambiare lingua in qualsiasi momento.',
+ mockup_tipoLabel: 'Tipo Voucher', mockup_cdd: '', mockup_ym: '',
+ mockup_edLabel: 'Edizione', mockup_impLabel: 'Importo Richiesto',
+ mockup_ordineLabel: 'Ordine ID', mockup_contattoLabel: 'Contatto ID',
+ mockup_motivLabel: 'Motivazione', mockup_motivChosen: 'Correlato al Reso', mockup_motivAltro: 'Altro',
+ mockup_dettaglioAlert: 'Specifica motivazione — campo obbligatorio',
+ mockup_dettaglioLabel: 'Specifica motivazione',
+ mockup_dettaglioEx: 'es. "Richiesta del cliente per rimborso duplicato"',
+ mockup_submit: 'Assegna Codici', mockup_assigned: 'Codici Assegnati', mockup_copy: 'Copia',
+ mockup_summary: '4 codici assegnati per un totale di 47.50 € (eccedenza: +0.20 €)',
+ mockup_tabAssegna: 'Assegna', mockup_tabAnnulla: 'Annulla', mockup_tabCerca: 'Cerca',
+ mockup_annullaLabel: 'Codici da annullare', mockup_annullaHint: 'Incolla i codici da ripristinare, uno per riga',
+ mockup_ripristina: 'Ripristina Codici', mockup_ripristinaOk: '3 codici ripristinati a "Disponibile"',
+ mockup_nonTrovati: 'Non trovati o già disponibili: XX99-YY00-ZZ11',
+ mockup_cercaLabel: 'Cerca per ordine, codice o contatto',
+ mockup_cercaHint: 'Inserisci un numero ordine, un codice voucher o un contatto',
+ mockup_cercaOrdine: 'Ordine: 404-12345',
+ mockup_cercaContatto: 'Contatto: AX2-9876',
+ mockup_cercaCodici: 'Codici assegnati (2)',
+ },
+ en: {
+ backLink: 'Back to application',
+ badge: 'User Guide',
+ pageTitle: 'How to use the system',
+ pageSubtitle: 'This guide explains how to assign voucher codes, how to undo a previous assignment, and how to search for codes already assigned to an order or contact.',
+ sec1Title: '1. Assigning codes',
+ sec1Desc: 'To assign voucher codes to a beneficiary, follow these steps. Codes are marked as Used in the database as soon as they are assigned.',
+ step1a_title: 'Select the voucher type',
+ step1a_desc: 'Choose between Voucher1 (Teacher\'s Card) or Voucher2 by clicking the corresponding button. The active button is highlighted in orange.',
+ step1b_title: 'Select the edition',
+ step1b_desc: 'Choose the voucher edition year: 2024 or 2025.',
+ step1c_title: 'Enter the requested amount',
+ step1c_desc: 'Type the amount in euros. Decimal values are accepted (e.g. 47.30). If the amount cannot be covered exactly, the system automatically rounds up to the nearest 0.50 € multiple.',
+ noteTitle: 'Automatic rounding',
+ noteText: 'Example: if you request 47.30 €, the system tries to cover 47.50 € (rounded up to 0.50). The assigned total may be slightly higher than the requested amount.',
+ step1d_title: 'Enter the Order ID',
+ step1d_desc: 'Enter the reference order identifier (e.g. 404-12345). This field is mandatory and is saved to the database along with the assignment.',
+ step1e_title: 'Enter the Contact ID',
+ step1e_desc: 'Enter the contact identifier (e.g. AX2-9876). This field is also mandatory and is tracked in the database.',
+ step1f_title: 'Select the reason',
+ step1f_desc: 'From the dropdown menu, choose the reason for the assignment. Available options are: DNR, Return Related, Wrong Item, Missing Item, Other.',
+ noteAltroTitle: 'Did you select "Other"?',
+ noteAltroText: 'If you choose Other, an additional "Specify reason" field will automatically appear where a description is required. Without this description you will not be able to proceed with the assignment.',
+ step1g_title: 'Click "Assign Codes"',
+ step1g_desc: 'The system processes the request and shows the selected codes with their amounts.',
+ step1h_title: 'Copy and use the codes',
+ step1h_desc: 'Assigned codes are shown in a box. Use the Copy button to copy them all to the clipboard.',
+ sec2Title: '2. Undoing an assignment',
+ sec2Desc: 'If you assigned codes by mistake, you can restore them to Available via the "Undo" tab.',
+ step2a_title: 'Click the "Undo" tab',
+ step2a_desc: 'At the top of the card you\'ll find three navigation tabs. Click "Undo" to switch to restore mode.',
+ step2b_title: 'Paste the codes to undo',
+ step2b_desc: 'Copy the codes you want to restore and paste them into the text field, one per line. You can enter as many as you want at once.',
+ step2c_title: 'Click "Restore Codes"',
+ step2c_desc: 'The system updates the database and shows which codes were restored. If a code is not found or is already available, it is reported separately.',
+ sec3Title: '3. Searching an order',
+ sec3Desc: 'Use the "Search" tab to check if vouchers have already been assigned to a specific order, contact or code.',
+ step3a_title: 'Click the "Search" tab',
+ step3a_desc: 'At the top of the card you\'ll find three navigation tabs. Click "Search" to access the search.',
+ step3b_title: 'Enter your search term',
+ step3b_desc: 'You can enter: an order number (e.g. 404-12345), a Contact ID (e.g. AX2-9876) or a voucher code (e.g. AB12-CD34-EF56). The search is partial — even a portion of the text is enough.',
+ step3c_title: 'Read the results',
+ step3c_desc: 'For each order found, the system shows: order number, contact, date, reason and the full list of assigned codes. If there are no results, a warning message is shown.',
+ sec4Title: '4. Available codes',
+ sec4Desc: 'The system has codes in the following denominations. The algorithm automatically selects the optimal combination to cover the requested amount.',
+ th_importo: 'Amount', th_tipo: 'Type', th_logica: 'Selection logic',
+ td_grandi: 'Large codes, used first',
+ td_medi: 'Medium codes',
+ td_piccoli: 'Small codes',
+ td_mini: 'Minimum codes, used to complete',
+ sec5Title: '5. Changing language',
+ sec5Desc: 'The interface is available in Italian and English. Use the selector in the top right corner to change language at any time.',
+ mockup_tipoLabel: 'Voucher Type', mockup_cdd: 'Teacher\'s Card', mockup_ym: '',
+ mockup_edLabel: 'Edition', mockup_impLabel: 'Requested Amount',
+ mockup_ordineLabel: 'Order ID', mockup_contattoLabel: 'Contact ID',
+ mockup_motivLabel: 'Reason', mockup_motivChosen: 'Return Related', mockup_motivAltro: 'Other',
+ mockup_dettaglioAlert: 'Specify reason — mandatory field',
+ mockup_dettaglioLabel: 'Specify reason',
+ mockup_dettaglioEx: 'e.g. "Customer request for duplicate refund"',
+ mockup_submit: 'Assign Codes', mockup_assigned: 'Assigned Codes', mockup_copy: 'Copy',
+ mockup_summary: '4 codes assigned for a total of 47.50 € (excess: +0.20 €)',
+ mockup_tabAssegna: 'Assign', mockup_tabAnnulla: 'Undo', mockup_tabCerca: 'Search',
+ mockup_annullaLabel: 'Codes to undo', mockup_annullaHint: 'Paste codes to restore, one per line',
+ mockup_ripristina: 'Restore Codes', mockup_ripristinaOk: '3 codes restored to "Available"',
+ mockup_nonTrovati: 'Not found or already available: XX99-YY00-ZZ11',
+ mockup_cercaLabel: 'Search by order, code or contact',
+ mockup_cercaHint: 'Enter an order number, a voucher code or a contact',
+ mockup_cercaOrdine: 'Order: 404-12345',
+ mockup_cercaContatto: 'Contact: AX2-9876',
+ mockup_cercaCodici: 'Assigned codes (2)',
+ }
+ };
 
-        let lang = 'it';
+ let lang = 'it';
 
-        function setLang(newLang) {
-            lang = newLang;
-            document.documentElement.lang = newLang;
-            document.querySelectorAll('.lang-btn').forEach(b => {
-                b.classList.toggle('active', b.textContent.toLowerCase() === newLang);
-            });
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.dataset.i18n;
-                if (T[lang][key]) el.textContent = T[lang][key];
-            });
-        }
-    </script>
+ function setLang(newLang) {
+ lang = newLang;
+ document.documentElement.lang = newLang;
+ document.querySelectorAll('.lang-btn').forEach(b => {
+ b.classList.toggle('active', b.textContent.toLowerCase() === newLang);
+ });
+ document.querySelectorAll('[data-i18n]').forEach(el => {
+ const key = el.dataset.i18n;
+ if (T[lang][key]) el.textContent = T[lang][key];
+ });
+ }
+ </script>
 </body>
 </html>

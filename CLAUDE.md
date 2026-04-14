@@ -6,9 +6,9 @@ This file provides context and guidance for working on the VoucherManagementSyst
 
 ## 1. Project Overview
 
-**VoucherManagementSystem** is a proof-of-concept web application built to demonstrate a system for distributing Italian government voucher codes to beneficiaries. It was developed to present an idea to a company, which will be responsible for making the application secure and production-ready.
+**VoucherManagementSystem** is a proof-of-concept web application built to demonstrate a system for distributing voucher codes to beneficiaries. It was developed to present an idea to a company, which will be responsible for making the application secure and production-ready.
 
-The system manages voucher types and editions **fully dynamically** — any `Tipo` value loaded into the database via CSV is automatically supported without code changes (e.g. `Voucher1`, `Voucher2`, `CartaCultura`, `18app`, or any future type). The same applies to editions. The application automates code selection, persists every assignment to a MySQL database, and provides restore and search capabilities through a browser-based interface.
+The system manages voucher types and editions **fully dynamically** — any `Tipo` value loaded into the database via CSV is automatically supported without code changes (e.g. `Voucher1`, `Voucher2`, `Voucher3`, `Voucher4`, or any future type). The same applies to editions. The application automates code selection, persists every assignment to a MySQL database, and provides restore and search capabilities through a browser-based interface.
 
 **This is not a production system.** Security hardening, scalability, and infrastructure concerns are intentionally out of scope and will be addressed by the receiving company.
 
@@ -18,21 +18,21 @@ The system manages voucher types and editions **fully dynamically** — any `Tip
 
 ```
 VoucherManagementSystem/
-├── README.md                  # End-user installation guide and API reference
-├── CLAUDE.md                  # This file
-├── app.py                     # Flask application: core routes, business logic, DB access
-├── admin.py                   # Flask Blueprint: admin routes (/admin, /carica, /admin/stato-codici, /admin/toggle-campagna, /admin/toggle-taglio, /admin/export/*, /admin/invia-notifica)
-├── notifications.py           # Email monitoring: code-level threshold check and SMTP sending
-├── carica_codici.py           # CLI script: bulk CSV loader (alternative to web UI upload)
-├── requirements.txt           # Pinned Python dependencies
+├── README.md # End-user installation guide and API reference
+├── CLAUDE.md # This file
+├── app.py # Flask application: core routes, business logic, DB access
+├── admin.py # Flask Blueprint: admin routes (/admin, /carica, /admin/stato-codici, /admin/toggle-campagna, /admin/toggle-taglio, /admin/export/*, /admin/invia-notifica)
+├── notifications.py # Email monitoring: code-level threshold check and SMTP sending
+├── carica_codici.py # CLI script: bulk CSV loader (alternative to web UI upload)
+├── requirements.txt # Pinned Python dependencies
 ├── .gitignore
 ├── static/
-│   ├── logo.svg               # Full horizontal logo (icon + wordmark + tagline)
-│   └── logo-icon.svg          # Icon-only logo (scalable, for favicon/avatar use)
+│ ├── logo.svg # Full horizontal logo (icon + wordmark + tagline)
+│ └── logo-icon.svg # Icon-only logo (scalable, for favicon/avatar use)
 └── templates/
-    ├── index.html             # Main UI — Assign / Restore / Search tabs (HTML + CSS + JS)
-    ├── admin.html             # Admin panel — Carica Codici / Campagne / Export / Monitoraggio / Sistema tabs
-    └── guida.html             # Operator guide page with step-by-step instructions
+ ├── index.html # Main UI — Assign / Restore / Search tabs (HTML + CSS + JS)
+ ├── admin.html # Admin panel — Carica Codici / Campagne / Export / Monitoraggio / Sistema tabs
+ └── guida.html # Operator guide page with step-by-step instructions
 ```
 
 ### Key file roles
@@ -83,7 +83,7 @@ If after the main pass the total is still short (no exact fit possible), the alg
 # Phase 2 fallback — pick smallest overshoot candidate
 candidati = [c for c in rimanenti if Decimal(str(c[2])) >= residuo]
 if candidati:
-    codici.append(candidati[-1])  # [-1] because rimanenti is sorted DESC
+ codici.append(candidati[-1]) # [-1] because rimanenti is sorted DESC
 ```
 
 The algorithm does not guarantee a globally optimal combination in all cases, but it performs well given the typical denomination structure of government vouchers (fixed face values like 5, 10, 25, 50 EUR).
@@ -116,7 +116,7 @@ The database is named `VoucherManagementSystem` and contains three tables.
 | Column | Type | Notes |
 |---|---|---|
 | `CodiceID` | `VARCHAR(64)` PK | The voucher code string (e.g. `AB12-CD34-EF56`) |
-| `Tipo` | `VARCHAR(32)` | Voucher programme — any non-empty string (e.g. `Voucher1`, `Voucher2`, `CartaCultura`, `18app`) |
+| `Tipo` | `VARCHAR(32)` | Voucher programme — any non-empty string (e.g. `Voucher1`, `Voucher2`, `Voucher3`, `Voucher4`) |
 | `Importo` | `DECIMAL(10,2)` | Face value in euros — always use DECIMAL, never FLOAT |
 | `Edizione` | `VARCHAR(4)` | Edition identifier — any non-empty string (e.g. `'2024'`, `'2025'`, `'2026'`) |
 | `StatoCodice` | `ENUM('Disponibile', 'Usato')` | Current availability status |
@@ -207,7 +207,7 @@ The startup block in `__main__` opens a test connection to verify connectivity. 
 
 ### Types and editions are dynamic — not hardcoded
 
-Both voucher types (e.g. `Voucher1`, `Voucher2`, `CartaCultura`, `18app`) and editions (e.g. `'2024'`, `'2025'`, `'2026'`) are **fully dynamic**. The source of truth is the `Codici` table in the database. To add a new type or edition, simply upload a CSV with the new values via the admin panel — no code changes needed.
+Both voucher types (e.g. `Voucher1`, `Voucher2`, `Voucher3`, `Voucher4`) and editions (e.g. `'2024'`, `'2025'`, `'2026'`) are **fully dynamic**. The source of truth is the `Codici` table in the database. To add a new type or edition, simply upload a CSV with the new values via the admin panel — no code changes needed.
 
 The endpoint `GET /campagne-attive` (`app.py`) returns all `(Tipo, Edizione)` pairs that currently have `Disponibile` codes, grouped by tipo. `index.html` calls this on page load via `caricaCampagne()`, builds the tipo buttons dynamically, and updates the edizione buttons whenever the selected tipo changes via `aggiornaEdizioni()`. If a tipo or edition has no available codes, its button does not appear.
 
@@ -232,22 +232,22 @@ After every successful code assignment, `/assegna` calls `controlla_e_notifica()
 ### Adding a new API route
 
 1. Define the route function in `app.py` following the existing pattern:
-   - Accept `POST` with `request.get_json()`
-   - Validate all input fields, return 400 on validation failure
-   - Open a connection, perform the operation, close in `finally`
-   - Return `jsonify({...})` on success
+ - Accept `POST` with `request.get_json()`
+ - Validate all input fields, return 400 on validation failure
+ - Open a connection, perform the operation, close in `finally`
+ - Return `jsonify({...})` on success
 
 2. Add a corresponding section in `index.html`:
-   - Add a tab button in `.mode-tabs` and a panel `div` in the card
-   - Register the panel in the `panelMap` inside `switchMode`
-   - Add a form event listener following the `async/await` pattern
-   - Add all strings to both `TRANSLATIONS.it` and `TRANSLATIONS.en`
+ - Add a tab button in `.mode-tabs` and a panel `div` in the card
+ - Register the panel in the `panelMap` inside `switchMode`
+ - Add a form event listener following the `async/await` pattern
+ - Add all strings to both `TRANSLATIONS.it` and `TRANSLATIONS.en`
 
 3. Document the new endpoint in `README.md` under "API Reference".
 
 ### Adding a new voucher type
 
-No code changes required. Simply upload a CSV containing codes with the new `Tipo` value (e.g. `CartaCultura`, `18app`, or any custom string up to 32 characters) via `/admin` → tab "Carica Codici". The backend accepts any non-empty tipo. The frontend will display the new tipo button automatically on the next page load.
+No code changes required. Simply upload a CSV containing codes with the new `Tipo` value (e.g. `Voucher3`, `Voucher4`, or any custom string up to 32 characters) via `/admin` → tab "Carica Codici". The backend accepts any non-empty tipo. The frontend will display the new tipo button automatically on the next page load.
 
 ### Adding a new edition year
 
