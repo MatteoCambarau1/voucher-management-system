@@ -13,7 +13,7 @@ DB_CONFIG = {
     'host': os.environ.get('MYSQLHOST', 'localhost'),
     'user': os.environ.get('MYSQLUSER', 'root'),
     'password': os.environ.get('MYSQLPASSWORD', '12345678'),
-    'database': os.environ.get('MYSQLDATABASE', 'CDD_YM'),
+    'database': os.environ.get('MYSQLDATABASE', 'VoucherManagementSystem'),
     'port': int(os.environ.get('MYSQLPORT', 3306))
 }
 
@@ -158,7 +158,7 @@ def campagne_attive():
     """
     Restituisce i tipi e le edizioni che hanno almeno un codice Disponibile, raggruppati per tipo.
     Usato dal frontend per popolare dinamicamente i selettori di tipo ed edizione.
-    Output: { "campagne": [{"tipo": "CDD", "edizioni": ["2024", "2025"]}, ...] }
+    Output: { "campagne": [{"tipo": "Voucher1", "edizioni": ["2024", "2025"]}, ...] }
     """
     try:
         conn = get_db_connection()

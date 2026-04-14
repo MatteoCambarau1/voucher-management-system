@@ -1,4 +1,4 @@
-# CDD_YM — Voucher Code Distribution System
+# VoucherManagementSystem — Voucher Code Distribution System
 
 A web application for managing and distributing Italian government voucher codes (Carta del Docente and Giovani Merito) to beneficiaries. The system automates code selection, handles order tracking, and provides restore and search capabilities through a clean browser-based interface.
 
@@ -13,7 +13,7 @@ A web application for managing and distributing Italian government voucher codes
 - **Search** — look up past assignments by order number, contact ID, or individual voucher code
 - **Bilingual UI** — the interface supports Italian and English, switchable at runtime without a page reload
 - **Copy to clipboard** — assigned codes can be copied in a single click, ready to paste into external systems
-- **Per-campaign and per-denomination disable** — admin toggles to block assignments for a specific campaign (Tipo + Edizione) or a single denomination (e.g. €25.00 CDD 2025) without deleting any codes; re-enabling restores normal operation instantly
+- **Per-campaign and per-denomination disable** — admin toggles to block assignments for a specific campaign (Tipo + Edizione) or a single denomination (e.g. €25.00 Voucher1 2025) without deleting any codes; re-enabling restores normal operation instantly
 - **Distribution kill switch** — global admin toggle that blocks all new assignments system-wide; persisted in the database and survives server restarts
 - **Excel export** — one-click download of three reports: full code list with order details, full order list with assigned codes, and an aggregated summary by campaign and denomination
 
@@ -36,8 +36,8 @@ The application connects to a local MySQL instance. Ensure the MySQL server is r
 **1. Clone the repository**
 
 ```bash
-git clone https://github.com/MatteoCambarau1/CDD_YM.git
-cd CDD_YM
+git clone https://github.com/MatteoCambarau1/VoucherManagementSystem.git
+cd VoucherManagementSystem
 ```
 
 **2. Create and activate a virtual environment (recommended)**
@@ -67,9 +67,9 @@ openpyxl==3.1.2
 Create the database and the two required tables. Connect to your MySQL instance and run:
 
 ```sql
-CREATE DATABASE CDD_YM CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE VoucherManagementSystem CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-USE CDD_YM;
+USE VoucherManagementSystem;
 
 CREATE TABLE Codici (
     CodiceID        VARCHAR(64)  NOT NULL PRIMARY KEY,
@@ -101,7 +101,7 @@ The application reads database credentials from environment variables with sensi
 | `MYSQLHOST` | `localhost` | Database host |
 | `MYSQLUSER` | `root` | Database user |
 | `MYSQLPASSWORD` | *(none)* | Database password |
-| `MYSQLDATABASE` | `CDD_YM` | Database name |
+| `MYSQLDATABASE` | `VoucherManagementSystem` | Database name |
 | `MYSQLPORT` | `3306` | Database port |
 
 **Local development:** set the variables in your shell or create a `.env` file and export them before running the app.
@@ -137,7 +137,7 @@ The interface is organised into three tabs.
 
 Use this tab to distribute voucher codes to a beneficiary.
 
-1. Select the **voucher type** from the available buttons — populated dynamically from the database (e.g. CDD, YM, CartaCultura, 18app).
+1. Select the **voucher type** from the available buttons — populated dynamically from the database (e.g. Voucher1, Voucher2, CartaCultura, 18app).
 2. Select the **edition** — updates automatically to show only editions available for the selected type.
 3. Enter the **requested amount** in euros (e.g. `47.30`).
 4. Enter the **Order ID** and **Contact ID** from your order management system.
@@ -190,8 +190,8 @@ View all campaigns (Tipo + Edizione combinations) loaded in the database with th
 
 Each campaign has two levels of granular control:
 
-- **Toggle campagna** — disables or re-enables an entire campaign (e.g. all CDD 2024 codes). When disabled, `/assegna` rejects requests for that campaign with a `503` error. The codes are not deleted and become available again instantly upon re-enabling.
-- **Toggle taglio** — disables or re-enables a single denomination within a campaign (e.g. €25.00 CDD 2025 only). Useful to stop distributing a specific face value while keeping others active.
+- **Toggle campagna** — disables or re-enables an entire campaign (e.g. all Voucher1 2024 codes). When disabled, `/assegna` rejects requests for that campaign with a `503` error. The codes are not deleted and become available again instantly upon re-enabling.
+- **Toggle taglio** — disables or re-enables a single denomination within a campaign (e.g. €25.00 Voucher1 2025 only). Useful to stop distributing a specific face value while keeping others active.
 - **Elimina campagna** — permanently deletes all `Disponibile` codes for that campaign. Codes already assigned (`Usato`) are preserved. The campaign button disappears from the main UI once no available codes remain.
 
 ### Export
@@ -222,7 +222,7 @@ Press the button to toggle between states. The state is persisted in the databas
 ## Project Structure
 
 ```
-CDD_YM/
+VoucherManagementSystem/
 ├── app.py                  # Flask application — routes, business logic, DB access
 ├── admin.py                # Flask Blueprint — admin routes (/admin, /carica, /admin/stato-codici, toggle, export, etc.)
 ├── notifications.py        # Email monitoring — threshold check and SMTP sending
@@ -249,7 +249,7 @@ Assign voucher codes to an order.
 
 ```json
 {
-  "tipo": "CDD",
+  "tipo": "Voucher1",
   "edizione": "2025",
   "importo": 47.30,
   "ordine": "404-XXXXXXXX",
@@ -261,7 +261,7 @@ Assign voucher codes to an order.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `tipo` | `string` | Yes | Voucher type — any non-empty string matching a type present in the database (e.g. `CDD`, `YM`, `CartaCultura`, `18app`) |
+| `tipo` | `string` | Yes | Voucher type — any non-empty string matching a type present in the database (e.g. `Voucher1`, `Voucher2`, `CartaCultura`, `18app`) |
 | `edizione` | `string` | Yes | Edition — any non-empty string matching an edition present in the database (e.g. `2024`, `2025`, `2026`) |
 | `importo` | `number` | Yes | Requested amount in euros (must be > 0) |
 | `ordine` | `string` | Yes | Order identifier |
@@ -280,8 +280,8 @@ Assign voucher codes to an order.
 ```json
 {
   "codici": [
-    { "codice_id": "AB12-CD34-EF56", "tipo": "CDD", "importo": 30.00, "edizione": "2025" },
-    { "codice_id": "GH78-IJ90-KL12", "tipo": "CDD", "importo": 17.50, "edizione": "2025" }
+    { "codice_id": "AB12-CD34-EF56", "tipo": "Voucher1", "importo": 30.00, "edizione": "2025" },
+    { "codice_id": "GH78-IJ90-KL12", "tipo": "Voucher1", "importo": 17.50, "edizione": "2025" }
   ],
   "totale": 47.50,
   "importo_richiesto": 47.30,
@@ -340,7 +340,7 @@ Search for past orders by order ID, contact ID, or voucher code.
       "motivazione_dettaglio": null,
       "data": "2025-03-07",
       "codici": [
-        { "codice_id": "AB12-CD34-EF56", "tipo": "CDD", "importo": 30.00, "edizione": "2025", "stato": "Usato" }
+        { "codice_id": "AB12-CD34-EF56", "tipo": "Voucher1", "importo": 30.00, "edizione": "2025", "stato": "Usato" }
       ]
     }
   ]
@@ -356,7 +356,7 @@ Enable or disable all assignments for a campaign (Tipo + Edizione).
 **Request body**
 
 ```json
-{ "tipo": "CDD", "edizione": "2025" }
+{ "tipo": "Voucher1", "edizione": "2025" }
 ```
 
 **Success response (200)**
@@ -376,7 +376,7 @@ Enable or disable a single denomination within a campaign.
 **Request body**
 
 ```json
-{ "tipo": "CDD", "edizione": "2025", "importo": "25.00" }
+{ "tipo": "Voucher1", "edizione": "2025", "importo": "25.00" }
 ```
 
 **Success response (200)**
@@ -420,9 +420,9 @@ Returns all voucher types and their available editions, grouped by type. Used by
 ```json
 {
   "campagne": [
-    { "tipo": "CDD", "edizioni": ["2024", "2025", "2026"] },
+    { "tipo": "Voucher1", "edizioni": ["2024", "2025", "2026"] },
     { "tipo": "CartaCultura", "edizioni": ["2026"] },
-    { "tipo": "YM", "edizioni": ["2024", "2025"] }
+    { "tipo": "Voucher2", "edizioni": ["2024", "2025"] }
   ]
 }
 ```
@@ -467,8 +467,8 @@ Configurazione
 
 The `Configurazione` table is created automatically on first startup. It holds:
 - `distribuzione_attiva` — `'1'` (active) or `'0'` (disabled); the global kill switch
-- `disabilitato_{Tipo}_{Edizione}` — `'1'` when a campaign is disabled (e.g. `disabilitato_CDD_2025`)
-- `disabilitato_{Tipo}_{Edizione}_{importo}` — `'1'` when a single denomination is disabled (e.g. `disabilitato_CDD_2025_25.00`)
+- `disabilitato_{Tipo}_{Edizione}` — `'1'` when a campaign is disabled (e.g. `disabilitato_Voucher1_2025`)
+- `disabilitato_{Tipo}_{Edizione}_{importo}` — `'1'` when a single denomination is disabled (e.g. `disabilitato_Voucher1_2025_25.00`)
 
 Campaign and denomination keys are created on first toggle and removed automatically when a campaign is deleted.
 

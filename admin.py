@@ -16,7 +16,7 @@ DB_CONFIG = {
     'host': os.environ.get('MYSQLHOST', 'localhost'),
     'user': os.environ.get('MYSQLUSER', 'root'),
     'password': os.environ.get('MYSQLPASSWORD', '12345678'),
-    'database': os.environ.get('MYSQLDATABASE', 'CDD_YM'),
+    'database': os.environ.get('MYSQLDATABASE', 'VoucherManagementSystem'),
     'port': int(os.environ.get('MYSQLPORT', 3306))
 }
 
@@ -152,7 +152,7 @@ def stato_codici():
 def toggle_campagna():
     """
     Abilita/disabilita una campagna (Tipo + Edizione).
-    Input: { "tipo": "CDD", "edizione": "2025" }
+    Input: { "tipo": "Voucher1", "edizione": "2025" }
     Output: { "attivo": bool }
     """
     try:
@@ -187,7 +187,7 @@ def toggle_campagna():
 def toggle_taglio():
     """
     Abilita/disabilita un taglio specifico (Tipo + Edizione + Importo).
-    Input: { "tipo": "CDD", "edizione": "2025", "importo": "25.00" }
+    Input: { "tipo": "Voucher1", "edizione": "2025", "importo": "25.00" }
     Output: { "attivo": bool }
     """
     try:
@@ -302,7 +302,7 @@ def elimina_campagna():
     """
     Elimina tutti i codici Disponibili di una campagna (Tipo + Edizione).
     I codici già assegnati (Usato) non vengono toccati.
-    Input: { "tipo": "CDD", "edizione": "2024" }
+    Input: { "tipo": "Voucher1", "edizione": "2024" }
     Output: { "eliminati": int }
     """
     try:

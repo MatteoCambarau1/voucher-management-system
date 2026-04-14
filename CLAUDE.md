@@ -1,14 +1,14 @@
-# CLAUDE.md — CDD_YM Project Guide
+# CLAUDE.md — VoucherManagementSystem Project Guide
 
-This file provides context and guidance for working on the CDD_YM codebase. Read it before making any changes.
+This file provides context and guidance for working on the VoucherManagementSystem codebase. Read it before making any changes.
 
 ---
 
 ## 1. Project Overview
 
-**CDD_YM** is a proof-of-concept web application built to demonstrate a system for distributing Italian government voucher codes to beneficiaries. It was developed to present an idea to a company, which will be responsible for making the application secure and production-ready.
+**VoucherManagementSystem** is a proof-of-concept web application built to demonstrate a system for distributing Italian government voucher codes to beneficiaries. It was developed to present an idea to a company, which will be responsible for making the application secure and production-ready.
 
-The system manages voucher types and editions **fully dynamically** — any `Tipo` value loaded into the database via CSV is automatically supported without code changes (e.g. `CDD`, `YM`, `CartaCultura`, `18app`, or any future type). The same applies to editions. The application automates code selection, persists every assignment to a MySQL database, and provides restore and search capabilities through a browser-based interface.
+The system manages voucher types and editions **fully dynamically** — any `Tipo` value loaded into the database via CSV is automatically supported without code changes (e.g. `Voucher1`, `Voucher2`, `CartaCultura`, `18app`, or any future type). The same applies to editions. The application automates code selection, persists every assignment to a MySQL database, and provides restore and search capabilities through a browser-based interface.
 
 **This is not a production system.** Security hardening, scalability, and infrastructure concerns are intentionally out of scope and will be addressed by the receiving company.
 
@@ -17,7 +17,7 @@ The system manages voucher types and editions **fully dynamically** — any `Tip
 ## 2. Project Structure
 
 ```
-CDD_YM/
+VoucherManagementSystem/
 ├── README.md                  # End-user installation guide and API reference
 ├── CLAUDE.md                  # This file
 ├── app.py                     # Flask application: core routes, business logic, DB access
@@ -109,14 +109,14 @@ Python dependencies are pinned exactly in `requirements.txt`. Do not add new dep
 
 ## 5. Database Schema
 
-The database is named `CDD_YM` and contains three tables.
+The database is named `VoucherManagementSystem` and contains three tables.
 
 ### `Codici` — one row per physical voucher code
 
 | Column | Type | Notes |
 |---|---|---|
 | `CodiceID` | `VARCHAR(64)` PK | The voucher code string (e.g. `AB12-CD34-EF56`) |
-| `Tipo` | `VARCHAR(32)` | Voucher programme — any non-empty string (e.g. `CDD`, `YM`, `CartaCultura`, `18app`) |
+| `Tipo` | `VARCHAR(32)` | Voucher programme — any non-empty string (e.g. `Voucher1`, `Voucher2`, `CartaCultura`, `18app`) |
 | `Importo` | `DECIMAL(10,2)` | Face value in euros — always use DECIMAL, never FLOAT |
 | `Edizione` | `VARCHAR(4)` | Edition identifier — any non-empty string (e.g. `'2024'`, `'2025'`, `'2026'`) |
 | `StatoCodice` | `ENUM('Disponibile', 'Usato')` | Current availability status |
@@ -142,8 +142,8 @@ The database is named `CDD_YM` and contains three tables.
 
 Holds multiple rows:
 - `distribuzione_attiva` — `'1'` (active) or `'0'` (disabled); created automatically by `ensure_configurazione()` on first startup.
-- `disabilitato_{Tipo}_{Edizione}` — `'1'` when a campaign is disabled (e.g. `disabilitato_CDD_2025`).
-- `disabilitato_{Tipo}_{Edizione}_{importo}` — `'1'` when a single denomination is disabled (e.g. `disabilitato_CDD_2025_25.00`).
+- `disabilitato_{Tipo}_{Edizione}` — `'1'` when a campaign is disabled (e.g. `disabilitato_Voucher1_2025`).
+- `disabilitato_{Tipo}_{Edizione}_{importo}` — `'1'` when a single denomination is disabled (e.g. `disabilitato_Voucher1_2025_25.00`).
 
 Campaign and taglio keys are created on first toggle and removed automatically when a campaign is deleted via `elimina-campagna`. No manual SQL needed.
 
@@ -207,7 +207,7 @@ The startup block in `__main__` opens a test connection to verify connectivity. 
 
 ### Types and editions are dynamic — not hardcoded
 
-Both voucher types (e.g. `CDD`, `YM`, `CartaCultura`, `18app`) and editions (e.g. `'2024'`, `'2025'`, `'2026'`) are **fully dynamic**. The source of truth is the `Codici` table in the database. To add a new type or edition, simply upload a CSV with the new values via the admin panel — no code changes needed.
+Both voucher types (e.g. `Voucher1`, `Voucher2`, `CartaCultura`, `18app`) and editions (e.g. `'2024'`, `'2025'`, `'2026'`) are **fully dynamic**. The source of truth is the `Codici` table in the database. To add a new type or edition, simply upload a CSV with the new values via the admin panel — no code changes needed.
 
 The endpoint `GET /campagne-attive` (`app.py`) returns all `(Tipo, Edizione)` pairs that currently have `Disponibile` codes, grouped by tipo. `index.html` calls this on page load via `caricaCampagne()`, builds the tipo buttons dynamically, and updates the edizione buttons whenever the selected tipo changes via `aggiornaEdizioni()`. If a tipo or edition has no available codes, its button does not appear.
 
@@ -322,10 +322,10 @@ The `/cerca` endpoint executes a UNION query that searches `Ordini.Ordine`, `Ord
 
 ### Dynamic voucher types — merged into `main` April 2026
 
-The `Tipo` column was changed from `ENUM('CDD', 'YM')` to `VARCHAR(32)` to support fully dynamic voucher types. **This change is now in `main`.** If you are working from a database created before April 2026, run the following SQL once before deploying:
+The `Tipo` column was changed from `ENUM('Voucher1', 'Voucher2')` to `VARCHAR(32)` to support fully dynamic voucher types. **This change is now in `main`.** If you are working from a database created before April 2026, run the following SQL once before deploying:
 
 ```sql
 ALTER TABLE Codici MODIFY Tipo VARCHAR(32) NOT NULL;
 ```
 
-All hardcoded type validations (`if tipo not in ('CDD', 'YM')`) were removed from `app.py`, `admin.py`, and `carica_codici.py`. The `/campagne-attive` endpoint now returns `{ "campagne": [{"tipo": ..., "edizioni": [...]}] }` instead of `{ "edizioni": [...] }`. The frontend function `caricaEdizioni()` was replaced by `caricaCampagne()` + `aggiornaEdizioni()`.
+All hardcoded type validations (`if tipo not in ('Voucher1', 'Voucher2')`) were removed from `app.py`, `admin.py`, and `carica_codici.py`. The `/campagne-attive` endpoint now returns `{ "campagne": [{"tipo": ..., "edizioni": [...]}] }` instead of `{ "edizioni": [...] }`. The frontend function `caricaEdizioni()` was replaced by `caricaCampagne()` + `aggiornaEdizioni()`.

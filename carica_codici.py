@@ -1,17 +1,17 @@
 """
-carica_codici.py — Carica codici voucher da un file CSV nel database CDD_YM.
+carica_codici.py — Carica codici voucher da un file CSV nel database VoucherManagementSystem.
 
 Utilizzo:
     python3 carica_codici.py <file.csv>
 
 Formato CSV atteso (con intestazione):
     CodiceID,Tipo,Importo,Edizione
-    AB12-CD34-EF56,CDD,25.00,2025
+    AB12-CD34-EF56,Voucher1,25.00,2025
     GH78-IJ90-KL12,CartaCultura,50.00,2026
 
 Colonne:
     CodiceID  — codice voucher (stringa, max 64 caratteri)
-    Tipo      — qualsiasi stringa non vuota (es. CDD, YM, CartaCultura, 18app)
+    Tipo      — qualsiasi stringa non vuota (es. Voucher1, Voucher2, CartaCultura, 18app)
     Importo   — valore in euro (es. 25.00)
     Edizione  — anno o altro identificativo (es. 2024, 2025, 2026)
 
@@ -31,7 +31,7 @@ DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
     'password': '12345678',
-    'database': 'CDD_YM'
+    'database': 'VoucherManagementSystem'
 }
 
 def valida_riga(riga, numero):
