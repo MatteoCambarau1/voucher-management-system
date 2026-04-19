@@ -64,8 +64,8 @@ def carica_codici():
             if len(codice) > 64:
                 errori.append(f'Riga {i}: CodiceID troppo lungo ({len(codice)} caratteri)')
                 continue
-            if tipo not in ('Voucher1', 'Voucher2'):
-                errori.append(f'Riga {i}: Tipo "{tipo}" non valido (usa Voucher1 o Voucher2)')
+            if not tipo:
+                errori.append(f'Riga {i}: Tipo mancante')
                 continue
             if not edizione:
                 errori.append(f'Riga {i}: Edizione mancante')
@@ -157,7 +157,7 @@ def toggle_campagna():
         tipo = data.get('tipo', '').upper().strip()
         edizione = data.get('edizione', '').strip()
 
-        if tipo not in ('Voucher1', 'Voucher2') or not edizione:
+        if not tipo or not edizione:
             return jsonify({'error': 'Parametri non validi'}), 400
 
         chiave = f'disabilitato_{tipo}_{edizione}'
@@ -193,7 +193,7 @@ def toggle_taglio():
         edizione = data.get('edizione', '').strip()
         importo_str = data.get('importo', '').strip()
 
-        if tipo not in ('Voucher1', 'Voucher2') or not edizione:
+        if not tipo or not edizione:
             return jsonify({'error': 'Parametri non validi'}), 400
 
         try:

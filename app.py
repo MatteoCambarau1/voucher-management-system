@@ -156,20 +156,29 @@ def marca_codici_usati(conn, cursor, codici_selezionati, identificativo_ordine):
 @app.route('/campagne-attive')
 def campagne_attive():
     """
-    Restituisce le edizioni che hanno almeno un codice Disponibile.
-    Usato dal frontend per popolare dinamicamente i bottoni di selezione edizione.
-    Output: { "edizioni": ["2024", "2025", ...] }
+    Restituisce i tipi e le edizioni che hanno almeno un codice Disponibile.
+    Usato dal frontend per popolare dinamicamente i bottoni di selezione tipo/edizione.
+    Output: { "campagne": [{ "tipo": "Voucher1", "edizioni": ["2024", "2025"] }, ...] }
     """
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT DISTINCT Edizione FROM Codici WHERE StatoCodice = 'Disponibile' ORDER BY Edizione"
-        )
-        edizioni = [r[0] for r in cursor.fetchall()]
+        cursor.execute("""
+            SELECT DISTINCT Tipo, Edizione
+            FROM Codici
+            WHERE StatoCodice = 'Disponibile'
+            ORDER BY Tipo, Edizione
+        """)
+        rows = cursor.fetchall()
         cursor.close()
         conn.close()
-        return jsonify({'edizioni': edizioni})
+        campagne = {}
+        for tipo, edizione in rows:
+            if tipo not in campagne:
+                campagne[tipo] = []
+            campagne[tipo].append(edizione)
+        result = [{'tipo': t, 'edizioni': eds} for t, eds in campagne.items()]
+        return jsonify({'campagne': result})
     except Exception as e:
         print(f'Errore campagne-attive: {e}')
         return jsonify({'error': 'Errore interno del server'}), 500
@@ -204,8 +213,8 @@ def assegna_codici():
         motivazione_dettaglio = data.get('motivazione_dettaglio', '').strip()
 
         # Validazione
-        if tipo not in ['Voucher1', 'Voucher2']:
-            return jsonify({'error': 'Tipo voucher non valido'}), 400
+        if not tipo:
+            return jsonify({'error': 'Tipo voucher non specificato'}), 400
         if not edizione:
             return jsonify({'error': 'Edizione non specificata'}), 400
         if importo <= 0:
