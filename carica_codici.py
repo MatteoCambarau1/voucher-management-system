@@ -11,32 +11,31 @@ Formato CSV atteso (con intestazione):
 
 Colonne:
     CodiceID  — codice voucher (stringa, max 64 caratteri)
-    Tipo      — Voucher1 oppure Voucher2
+    Tipo      — qualsiasi stringa non vuota (es. Voucher1, Voucher2, Voucher3...)
     Importo   — valore in euro (es. 25.00)
-    Edizione  — anno (es. 2024, 2025)
+    Edizione  — identificativo edizione (es. 2024, 2025)
 
 Note:
     - I duplicati vengono ignorati (INSERT IGNORE).
     - StatoCodice viene impostato automaticamente a 'Disponibile'.
     - Le righe non valide vengono saltate e riportate a fine esecuzione.
+    - Il campo Tipo viene convertito in maiuscolo automaticamente.
 """
 
 import csv
 import sys
+import os
 from decimal import Decimal, InvalidOperation
 import mysql.connector
 
-# --- Configurazione database (deve corrispondere a quella in app.py) ---
+# --- Configurazione database ---
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '12345678',
-    'database': 'VoucherManagementSystem'
+    'host': os.environ.get('MYSQLHOST', 'localhost'),
+    'user': os.environ.get('MYSQLUSER', 'root'),
+    'password': os.environ.get('MYSQLPASSWORD', '12345678'),
+    'database': os.environ.get('MYSQLDATABASE', 'VoucherManagementSystem'),
+    'port': int(os.environ.get('MYSQLPORT', 3306))
 }
-
-TIPI_VALIDI     = {'Voucher1', 'Voucher2'}
-EDIZIONI_VALIDE = {'2024', '2025'}
-
 
 def valida_riga(riga, numero):
     """Valida una riga del CSV. Restituisce (dati, errore)."""
@@ -49,10 +48,10 @@ def valida_riga(riga, numero):
         return None, f"riga {numero}: CodiceID mancante"
     if len(codice) > 64:
         return None, f"riga {numero}: CodiceID troppo lungo ({len(codice)} caratteri)"
-    if tipo not in TIPI_VALIDI:
-        return None, f"riga {numero}: Tipo '{tipo}' non valido (usa Voucher1 o Voucher2)"
-    if edizione not in EDIZIONI_VALIDE:
-        return None, f"riga {numero}: Edizione '{edizione}' non valida (usa {sorted(EDIZIONI_VALIDE)})"
+    if not tipo:
+        return None, f"riga {numero}: Tipo mancante"
+    if not edizione:
+        return None, f"riga {numero}: Edizione mancante"
     try:
         importo_dec = Decimal(importo)
         if importo_dec <= 0:
