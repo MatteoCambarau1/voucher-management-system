@@ -2,6 +2,8 @@
 
 A web application for managing and distributing voucher codes to beneficiaries. The system automates code selection, handles order tracking, and provides restore and search capabilities through a clean browser-based interface.
 
+**Live demo:** <!-- TODO: add Railway URL after deploy -->
+
 ---
 
 ## Key Features
@@ -60,6 +62,7 @@ The `requirements.txt` pins the following packages:
 Flask==3.0.0
 mysql-connector-python==8.2.0
 openpyxl==3.1.2
+gunicorn==21.2.0
 ```
 
 **4. Set up the MySQL database**
@@ -223,16 +226,19 @@ Press the button to toggle between states. The state is persisted in the databas
 
 ```
 VoucherManagementSystem/
-├── app.py # Flask application — routes, business logic, DB access
-├── admin.py # Flask Blueprint — admin routes (/admin, /carica, /admin/stato-codici, toggle, export, etc.)
-├── notifications.py # Email monitoring — threshold check and SMTP sending
-├── carica_codici.py # CLI script — bulk CSV loader (alternative to web upload)
-├── requirements.txt # Python package dependencies (Flask, mysql-connector-python, openpyxl)
+├── app.py              # Flask application — routes, business logic, DB access
+├── admin.py            # Flask Blueprint — admin routes (/admin, /carica, toggle, export, etc.)
+├── notifications.py    # Email monitoring — threshold check and SMTP sending
+├── carica_codici.py    # CLI script — bulk CSV loader (alternative to web upload)
+├── requirements.txt    # Python dependencies (Flask, mysql-connector-python, openpyxl, gunicorn)
+├── Procfile            # Railway/Heroku process declaration (gunicorn)
+├── runtime.txt         # Python version pin for Railway
+├── DEPLOY_NOTES.md     # Deploy checklist and env var reference
 ├── .gitignore
 └── templates/
- ├── index.html # Main UI (Assign / Restore / Search tabs)
- ├── admin.html # Admin panel (Carica Codici / Campagne / Export / Monitoraggio / Sistema tabs)
- └── guida.html # User guide page with step-by-step instructions
+    ├── index.html      # Main UI (Assign / Restore / Search tabs)
+    ├── admin.html      # Admin panel (Carica Codici / Campagne / Export / Monitoraggio / Sistema tabs)
+    └── guida.html      # User guide page with step-by-step instructions
 ```
 
 ---
@@ -474,6 +480,21 @@ Campaign and denomination keys are created on first toggle and removed automatic
 
 ---
 
+## Deploy on Railway
+
+The repository includes a `Procfile` and `runtime.txt` ready for Railway.
+
+1. Push the repository to GitHub.
+2. Create a new Railway project from the GitHub repo.
+3. Add the **MySQL** plugin and link it to the service — Railway injects `MYSQLHOST`, `MYSQLUSER`, `MYSQLPASSWORD`, `MYSQLDATABASE`, `MYSQLPORT` automatically.
+4. Set the additional variables in **Railway → Variables**: `APP_URL` (your Railway public URL), `FLASK_DEBUG=false`.
+5. Run the database schema SQL from `DEPLOY_NOTES.md` via the Railway MySQL console.
+6. Deploy — Railway detects the `Procfile` and starts the app with gunicorn.
+
+See `DEPLOY_NOTES.md` for the full checklist, schema SQL, and environment variable reference.
+
+---
+
 ## Troubleshooting
 
 **"Errore connessione database" on startup**
@@ -490,13 +511,7 @@ The `Codici` table has no rows with `StatoCodice = 'Disponibile'` matching the s
 
 **Port already in use**
 
-Another process is using port 8080. Either stop that process or change the port in the last line of `app.py`:
-
-```python
-app.run(debug=True, host='0.0.0.0', port=8080)
-```
-
-> **Warning:** The application runs with `debug=True` by default, which is suitable for local use only. Disable debug mode and use a production WSGI server (such as Gunicorn) before exposing the application on a network.
+Another process is using port 8080. Set the `PORT` environment variable to a different value, or kill the conflicting process.
 
 ---
 

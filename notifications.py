@@ -87,7 +87,7 @@ def _invia_email(sotto_soglia):
 {righe}
 
 Accedere al pannello admin per caricare nuovi codici:
-http://localhost:8080/admin
+{os.environ.get('APP_URL', 'http://localhost:8080')}/admin
 
 ---
 Notifica automatica CodeMS
