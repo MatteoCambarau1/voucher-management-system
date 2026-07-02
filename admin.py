@@ -7,9 +7,17 @@ from datetime import datetime
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from notifications import get_conteggio_codici, controlla_e_notifica, SOGLIA
+from auth import auth
 import os
 
 admin_bp = Blueprint('admin', __name__)
+
+@admin_bp.before_request
+@auth.login_required(role='admin')
+def require_admin_auth():
+    """Blocca ogni route del blueprint admin dietro credenziali di ruolo 'admin'."""
+    pass
+
 
 # Configurazione database (deve corrispondere a quella in app.py)
 DB_CONFIG = {

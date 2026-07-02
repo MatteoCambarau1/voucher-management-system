@@ -3,6 +3,7 @@ import mysql.connector
 from decimal import Decimal, ROUND_UP
 from admin import admin_bp
 from notifications import controlla_e_notifica
+from auth import auth
 import os
 
 app = Flask(__name__)
@@ -154,6 +155,7 @@ def marca_codici_usati(conn, cursor, codici_selezionati, identificativo_ordine):
     )
 
 @app.route('/campagne-attive')
+@auth.login_required
 def campagne_attive():
     """
     Restituisce i tipi e le edizioni che hanno almeno un codice Disponibile.
@@ -185,14 +187,17 @@ def campagne_attive():
 
 
 @app.route('/')
+@auth.login_required
 def index():
     return render_template('index.html')
 
 @app.route('/guida')
+@auth.login_required
 def guida():
     return render_template('guida.html')
 
 @app.route('/assegna', methods=['POST'])
+@auth.login_required
 def assegna_codici():
     """
     Riceve JSON: { tipo, edizione, importo, ordine, contatto, motivazione, motivazione_dettaglio }
@@ -280,6 +285,7 @@ def assegna_codici():
 
 
 @app.route('/annulla', methods=['POST'])
+@auth.login_required
 def annulla_codici():
     """
     Riceve JSON: { "codici": ["ID1", "ID2", ...] }
@@ -340,6 +346,7 @@ def annulla_codici():
 
 
 @app.route('/cerca', methods=['POST'])
+@auth.login_required
 def cerca_ordine():
     """
     Riceve JSON: { "query": "..." }
