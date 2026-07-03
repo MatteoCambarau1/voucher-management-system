@@ -2,7 +2,7 @@
 
 A web application for managing and distributing voucher codes to beneficiaries. The system automates code selection, handles order tracking, and provides restore and search capabilities through a clean browser-based interface.
 
-**Live demo:** <!-- TODO: add Railway URL after deploy -->
+**Live demo:** https://vouchermanagementsystem-production.up.railway.app
 
 ---
 
@@ -129,6 +129,29 @@ On startup the application tests the database connection and reports whether it 
 ```
 
 Open your browser at [http://localhost:8080](http://localhost:8080).
+
+---
+
+## Authentication
+
+The application is protected by HTTP Basic Auth with two role-based accounts. Credentials are read at startup from environment variables — **if either variable is missing the app refuses to start**, so there are no hidden default passwords.
+
+| Env var           | Role    | Access                                                            |
+| ----------------- | ------- | ----------------------------------------------------------------- |
+| `USER_PASSWORD`   | `user`  | Main UI: Assign / Restore / Search and the guide page             |
+| `ADMIN_PASSWORD`  | `admin` | Everything above **plus** the `/admin` panel and admin endpoints  |
+
+The `admin` account inherits the `user` role — one login is enough to reach every page.
+
+**Local development:**
+
+```bash
+export USER_PASSWORD='pick-a-strong-one'
+export ADMIN_PASSWORD='pick-a-different-strong-one'
+python app.py
+```
+
+**Railway / cloud hosting:** add both variables in the platform dashboard before the first deploy. When you open the app in a browser you will get a native login prompt; enter `user` or `admin` as username with the matching password. The browser caches the credentials until you close the window.
 
 ---
 

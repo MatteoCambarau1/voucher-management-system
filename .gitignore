@@ -8,3 +8,4 @@ venv/
 .venv/
 instance/
 codici_test.csv
+.claude/

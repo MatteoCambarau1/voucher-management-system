@@ -13,7 +13,7 @@ app.register_blueprint(admin_bp)
 DB_CONFIG = {
     'host': os.environ.get('MYSQLHOST', 'localhost'),
     'user': os.environ.get('MYSQLUSER', 'root'),
-    'password': os.environ.get('MYSQLPASSWORD', '12345678'),
+    'password': os.environ.get('MYSQLPASSWORD', ''),
     'database': os.environ.get('MYSQLDATABASE', 'VoucherManagementSystem'),
     'port': int(os.environ.get('MYSQLPORT', 3306))
 }
